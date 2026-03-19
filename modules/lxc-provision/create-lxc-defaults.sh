@@ -26,17 +26,19 @@ var_hostname=n8nnew
 var_template_storage=backups
 var_container_storage=local
 password=violin
+var_dryrun=0
 
 usage(){
-  echo "Usage: $0 [-i vmid] [-h hostname]"
+  echo "Usage: $0 [-i vmid] [-h hostname] [-n]"
   exit 1
 }
 
 vmid=""
-while getopts ":i:h:" opt; do
+while getopts ":i:h:n" opt; do
   case "$opt" in
     i) vmid="$OPTARG" ;;
     h) var_hostname="$OPTARG" ;;
+    n) var_dryrun=1 ;;
     *) usage ;;
   esac
 done
@@ -71,15 +73,19 @@ fi
 
 echo "Creating LXC $vmid from template $template_path"
 # Create LXC (attempt conservative options)
-pct create "$vmid" "$template_path" \
-  --rootfs ${var_container_storage}:${var_disk} \
-  --cores "$var_cpu" \
-  --memory "$var_ram" \
-  --net0 name=eth0,bridge=${var_brg},ip=${var_net},type=veth \
-  --net1 name=eth1,bridge=candy,ip=dhcp,type=veth \
-  --unprivileged "$var_unprivileged" \
-  --hostname "$var_hostname" \
-  --features nesting=${var_nesting},keyctl=${var_keyctl},mknod=${var_mknod} || { echo "pct create failed"; exit 1; }
+if [ "$var_dryrun" -eq 1 ]; then
+  echo "DRYRUN: pct create \"$vmid\" \"$template_path\" --rootfs ${var_container_storage}:${var_disk} --cores \"$var_cpu\" --memory \"$var_ram\" --net0 name=eth0,bridge=${var_brg},ip=${var_net},type=veth --net1 name=eth1,bridge=candy,ip=dhcp,type=veth --unprivileged \"$var_unprivileged\" --hostname \"$var_hostname\" --features nesting=${var_nesting},keyctl=${var_keyctl},mknod=${var_mknod}"
+else
+  pct create "$vmid" "$template_path" \
+    --rootfs ${var_container_storage}:${var_disk} \
+    --cores "$var_cpu" \
+    --memory "$var_ram" \
+    --net0 name=eth0,bridge=${var_brg},ip=${var_net},type=veth \
+    --net1 name=eth1,bridge=candy,ip=dhcp,type=veth \
+    --unprivileged "$var_unprivileged" \
+    --hostname "$var_hostname" \
+    --features nesting=${var_nesting},keyctl=${var_keyctl},mknod=${var_mknod} || { echo "pct create failed"; exit 1; }
+fi
 
 # Start and set root password
 pct start "$vmid" || true
