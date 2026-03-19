@@ -1,0 +1,1589 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!DOCTYPE html>\
+<html lang="en">\
+<head>\
+<meta charset="UTF-8">\
+<meta name="viewport" content="width=device-width, initial-scale=1.0">\
+<title>USB/IP: Maximum Depth Research Guide</title>\
+<style>\
+:root\{--bg:#0a0c12;--s1:#13161f;--s2:#1c2030;--s3:#242840;--acc:#4f8ef7;--acc2:#7c3aed;--acc3:#06b6d4;--grn:#22c55e;--red:#ef4444;--ylw:#f59e0b;--orn:#f97316;--pnk:#ec4899;--txt:#e2e8f0;--mut:#94a3b8;--bdr:#2a2f45\}\
+*\{box-sizing:border-box;margin:0;padding:0\}\
+body\{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.75;max-width:1300px;margin:0 auto;padding:40px 24px\}\
+h1\{font-size:2.6rem;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;line-height:1.2\}\
+.sub\{color:var(--mut);font-size:1rem;margin-bottom:8px;padding-bottom:20px;border-bottom:1px solid var(--bdr)\}\
+.ver\{display:inline-block;background:var(--s3);border:1px solid var(--bdr);border-radius:8px;padding:4px 14px;font-size:12px;color:var(--acc3);font-weight:700;margin-bottom:30px\}\
+h2\{font-size:1.55rem;font-weight:800;color:var(--acc);margin:52px 0 18px;padding-bottom:10px;border-bottom:2px solid var(--bdr);display:flex;align-items:center;gap:10px\}\
+h2 .ico\{font-size:1.2rem\}\
+h3\{font-size:1.18rem;font-weight:700;color:#c4b5fd;margin:30px 0 12px\}\
+h4\{font-size:1rem;font-weight:700;color:var(--ylw);margin:18px 0 7px\}\
+p\{margin-bottom:13px\}\
+.toc\{background:var(--s1);border:1px solid var(--bdr);border-radius:14px;padding:28px 32px;margin:32px 0;display:grid;grid-template-columns:1fr 1fr;gap:0 30px\}\
+@media(max-width:800px)\{.toc\{grid-template-columns:1fr\}\}\
+.toc-sec\{color:var(--acc);font-weight:800;font-size:.85rem;letter-spacing:.8px;text-transform:uppercase;margin-top:16px;margin-bottom:4px\}\
+.toc a\{color:var(--mut);text-decoration:none;display:block;padding:2px 0 2px 14px;font-size:.87rem;transition:color .15s;border-left:2px solid transparent\}\
+.toc a:hover\{color:var(--acc);border-left-color:var(--acc)\}\
+.card\{background:var(--s1);border:1px solid var(--bdr);border-radius:12px;padding:20px 24px;margin:14px 0\}\
+.ca\{border-left:4px solid var(--acc)\}\
+.cg\{border-left:4px solid var(--grn);background:#001208\}\
+.cr\{border-left:4px solid var(--red);background:#120000\}\
+.cy\{border-left:4px solid var(--ylw);background:#120d00\}\
+.cp\{border-left:4px solid var(--acc2);background:#0a0620\}\
+.g2\{display:grid;grid-template-columns:1fr 1fr;gap:14px\}\
+.g3\{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px\}\
+.g4\{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px\}\
+@media(max-width:900px)\{.g2,.g3,.g4\{grid-template-columns:1fr\}\}\
+table\{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;background:var(--s1);border-radius:12px;overflow:hidden\}\
+th\{background:var(--s2);color:var(--acc);padding:11px 14px;text-align:left;font-weight:700;border-bottom:2px solid var(--bdr);white-space:nowrap\}\
+td\{padding:9px 14px;border-bottom:1px solid var(--bdr);vertical-align:top\}\
+tr:last-child td\{border-bottom:none\}\
+tr:hover td\{background:var(--s2)\}\
+.tag\{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.3px;margin:1px\}\
+.tb\{background:#1e3a5f;color:#7dd3fc\}\
+.tg\{background:#14532d;color:#86efac\}\
+.tr\{background:#7f1d1d;color:#fca5a5\}\
+.ty\{background:#78350f;color:#fde68a\}\
+.tp\{background:#4c1d95;color:#c4b5fd\}\
+.tq\{background:#164e63;color:#67e8f9\}\
+.to\{background:#7c2d12;color:#fdba74\}\
+.tz\{background:#1e293b;color:#94a3b8\}\
+.chk\{color:var(--grn);font-weight:800\}\
+.xmk\{color:var(--red);font-weight:800\}\
+.pmk\{color:var(--ylw);font-weight:800\}\
+code\{background:var(--s2);border:1px solid var(--bdr);border-radius:4px;padding:1px 7px;font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#7dd3fc\}\
+pre\{background:#060810;border:1px solid var(--bdr);border-left:4px solid var(--acc);border-radius:10px;padding:18px 20px;overflow-x:auto;font-family:'Cascadia Code',monospace;font-size:13px;color:#c9d1d9;margin:14px 0;line-height:1.6\}\
+pre .cm\{color:#6b7280\}\
+pre .kw\{color:#c084fc\}\
+pre .st\{color:#86efac\}\
+ul,ol\{padding-left:22px;margin-bottom:13px\}\
+li\{margin-bottom:5px\}\
+.hi\{background:linear-gradient(135deg,#0f172a,#1e1b4b);border:1px solid #3730a3;border-radius:12px;padding:18px 22px;margin:14px 0\}\
+.warn-box\{background:#1a1100;border:1px solid var(--ylw);border-radius:12px;padding:16px 20px;margin:14px 0\}\
+.ok-box\{background:#001208;border:1px solid var(--grn);border-radius:12px;padding:16px 20px;margin:14px 0\}\
+.danger-box\{background:#120000;border:1px solid var(--red);border-radius:12px;padding:16px 20px;margin:14px 0\}\
+.sec-intro\{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--bdr);border-radius:12px;padding:18px 22px;margin-bottom:20px;color:#cbd5e1\}\
+.num\{background:linear-gradient(135deg,var(--acc),var(--acc2));color:white;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0\}\
+.tool-row\{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px\}\
+.pbar-wrap\{background:var(--s2);border-radius:99px;height:8px;overflow:hidden;flex:1\}\
+.pbar\{height:100%;border-radius:99px;transition:width .3s\}\
+.summary-big\{background:linear-gradient(135deg,#0f172a,#1e1b4b);border:1px solid #4338ca;border-radius:16px;padding:28px 32px;margin:40px 0\}\
+a\{color:var(--acc);text-decoration:none\}\
+a:hover\{text-decoration:underline\}\
+.divider\{border:none;border-top:1px solid var(--bdr);margin:40px 0\}\
+.inline-tag\{display:inline-flex;align-items:center;gap:4px;background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;margin:1px\}\
+</style>\
+</head>\
+<body>\
+\
+<h1>USB/IP: Maximum Depth Research Guide</h1>\
+<p class="sub">Complete technical reference \'b7 Every tool \'b7 Video streaming \'b7 Security \'b7 Auto-connect \'b7 Hardware appliances \'b7 Proxmox/LXC/Docker \'b7 OpenWrt \'b7 Raspberry Pi \'b7 SSH/VPN tunneling \'b7 80+ tools catalogued</p>\
+<div class="ver">v2 \'b7 March 2026 \'b7 Expanded Edition</div>\
+\
+<div class="toc">\
+  <div>\
+    <div class="toc-sec">Foundation & Protocol</div>\
+    <a href="#s1">1. What USB/IP is \'97 full technical origin story</a>\
+    <a href="#s2">2. How the protocol works \'97 URBs, kernel modules, TCP framing</a>\
+    <a href="#s3">3. The 4 USB transfer types and why they matter</a>\
+    <a href="#s4">4. Server vs Client \'97 why the naming is backwards</a>\
+    <a href="#s5">5. USB/IP protocol wire format (OP codes, packet structure)</a>\
+\
+    <div class="toc-sec">The 7 Original Tools</div>\
+    <a href="#t1">6. Deskflow v1.26.0 \'97 Software KVM (NOT USB/IP)</a>\
+    <a href="#t2">7. cezanne/usbip-win \'97 original Windows port</a>\
+    <a href="#t3">8. vadimgrn/usbip-win2 \'97 modern Windows client</a>\
+    <a href="#t4">9. seastwood/usb-audio-ip-client \'97 audio+gaming</a>\
+    <a href="#t5">10. K-Francis-H/usbip-gui \'97 Linux GUI</a>\
+    <a href="#t6">11. featherbear/wsl-usb-gui \'97 WSL helper</a>\
+    <a href="#t7">12. nickbeth/wsl-usb-manager \'97 best all-around GUI</a>\
+    <a href="#compare">13. Side-by-side master comparison table</a>\
+\
+    <div class="toc-sec">Video & Isochronous</div>\
+    <a href="#video">14. USB webcam/video streaming \'97 is it possible?</a>\
+    <a href="#iso">15. Isochronous deep-dive \'97 the root cause of failure</a>\
+    <a href="#formats">16. Format-by-format compatibility: YUYV, MJPEG, H.264, H.265</a>\
+    <a href="#videobetter">17. Better alternatives for video over network</a>\
+\
+    <div class="toc-sec">What Works / What Doesn't</div>\
+    <a href="#works">18. Complete device compatibility list</a>\
+    <a href="#fails">19. What USB/IP cannot do \'97 hard limits</a>\
+    <a href="#latency">20. LAN vs WiFi vs WAN performance table</a>\
+\
+    <div class="toc-sec">Security</div>\
+    <a href="#security">21. USB/IP has zero native security \'97 full threat model</a>\
+    <a href="#ssh-tunnel">22. SSH tunnel method \'97 step by step</a>\
+    <a href="#wireguard">23. WireGuard VPN \'97 best practice for USB/IP over WAN</a>\
+    <a href="#firewall">24. Firewall rules and access control</a>\
+  </div>\
+  <div>\
+    <div class="toc-sec">Auto-Connect & Boot</div>\
+    <a href="#auto-linux">25. Linux auto-connect \'97 systemd, udev, by vendor ID</a>\
+    <a href="#auto-windows">26. Windows auto-connect \'97 usbipd-win, Task Scheduler, wsl-usb-manager</a>\
+    <a href="#auto-hotplug">27. Hotplug \'97 reconnect after unplug without manual steps</a>\
+\
+    <div class="toc-sec">Platform Guides</div>\
+    <a href="#guide-linux">28. Full Linux setup guide (server + client)</a>\
+    <a href="#guide-windows">29. Full Windows + WSL setup guide</a>\
+    <a href="#guide-pi">30. Raspberry Pi as USB/IP server</a>\
+    <a href="#guide-openwrt">31. OpenWrt router as USB/IP server</a>\
+    <a href="#guide-proxmox">32. Proxmox: USB passthrough to VMs and LXC containers</a>\
+    <a href="#guide-docker">33. Docker and container USB passthrough</a>\
+    <a href="#guide-qemu">34. QEMU/KVM and VirtualBox USB/IP client</a>\
+    <a href="#guide-macos">35. macOS \'97 the platform USB/IP forgot</a>\
+\
+    <div class="toc-sec">Full Ecosystem Catalog</div>\
+    <a href="#oss-tools">36. Open-source tools \'97 complete annotated list (80+ entries)</a>\
+    <a href="#hardware">37. Hardware USB/IP appliances \'97 Digi AnywhereUSB, SIIG, others</a>\
+    <a href="#commercial">38. Commercial software \'97 full comparison</a>\
+    <a href="#software-kvm">39. Software KVM tools \'97 the adjacent ecosystem</a>\
+    <a href="#audio-tools">40. Audio-over-IP tools \'97 the audio USB alternative</a>\
+    <a href="#video-tools">41. Video streaming tools \'97 video USB alternative</a>\
+    <a href="#awesome">42. Awesome-* lists and community hubs</a>\
+    <a href="#matrix">43. Master matrix: 80+ tools with all attributes</a>\
+    <a href="#decision">44. Decision tree: which tool for which situation</a>\
+  </div>\
+</div>\
+\
+<!-- ========== SECTION 1 ========== -->\
+<h2 id="s1"><span class="ico">\uc0\u55357 \u56620 </span> 1. What USB/IP Is \'97 Full Technical Origin Story</h2>\
+\
+<div class="sec-intro">\
+USB/IP is an open-source software system that transparently tunnels USB device communications (at the URB level, below all drivers) over standard TCP/IP networks. It was born from academic research, merged into the Linux kernel in 2014, and has since spawned an ecosystem of implementations, GUIs, and commercial products across every major platform.\
+</div>\
+\
+<h3>Origins</h3>\
+<p>USB/IP was created by <strong>Takahiro Hirofuchi</strong> and colleagues at the National Institute of Information and Communications Technology (NICT) in Japan. It was first published in a paper titled <em>"A Portable USB Device Driver for Distributed Systems"</em> at the USENIX Annual Technical Conference 2005 (FREENIX track) and won the <strong>FREENIX Best Paper Award</strong>.</p>\
+\
+<p>The project was hosted on SourceForge at <code>usbip.sourceforge.net</code> and gradually gained adoption. The Linux kernel developers began incorporating it into the staging tree (as an out-of-tree module) starting in 2009. It was officially promoted to the mainline Linux kernel at <strong>version 3.17 in 2014</strong>, where it remains as a first-class kernel subsystem maintained by the kernel community.</p>\
+\
+<div class="card ca">\
+  <h4>The Core Insight of the Original Paper</h4>\
+  <p>The designers observed that USB devices are fundamentally "request/response" \'97 an OS submits a USB Request Block (URB), and the device responds. If you can serialize that request and response and transport them over any reliable byte stream (TCP), you can make a device on Machine A appear locally attached to Machine B with zero changes to drivers, firmware, or applications. The USB stack on the client machine is completely unaware anything is remote.</p>\
+</div>\
+\
+<h3>Key Properties</h3>\
+<ul>\
+  <li><strong>Not a USB standard</strong> \'97 USB/IP is open-source software, not an official USB-IF specification. There is no hardware "USB/IP" port.</li>\
+  <li><strong>Operates below all drivers</strong> \'97 The stub driver intercepts URBs before they reach the normal device driver on the server side.</li>\
+  <li><strong>Applications see nothing different</strong> \'97 An application running on the client machine uses the remote device exactly as if it were locally attached.</li>\
+  <li><strong>Protocol documented in kernel</strong> \'97 See <code>Documentation/usb/usbip_protocol.rst</code> in the Linux kernel tree.</li>\
+  <li><strong>Default TCP port: 3240</strong></li>\
+  <li><strong>No native authentication or encryption</strong> \'97 raw plaintext protocol (more on this in Section 21).</li>\
+</ul>\
+\
+<!-- ========== SECTION 2 ========== -->\
+<h2 id="s2"><span class="ico">\uc0\u9881 \u65039 </span> 2. How the Protocol Works \'97 Kernel Modules, URBs, TCP Framing</h2>\
+\
+<h3>The Five Kernel Components</h3>\
+<table>\
+  <tr><th>Module</th><th>Side</th><th>Function</th><th>Load command</th></tr>\
+  <tr><td><code>usbip_core</code></td><td>Both</td><td>Shared utilities, protocol definitions, URB serialization</td><td>Auto (dep of others)</td></tr>\
+  <tr><td><code>usbip_host</code></td><td>Server</td><td>Stub driver \'97 binds to physical device, intercepts all URBs, sends them over TCP</td><td><code>modprobe usbip_host</code></td></tr>\
+  <tr><td><code>vhci_hcd</code></td><td>Client</td><td>Virtual HCI driver \'97 creates fake USB bus, receives URBs over TCP, presents device to OS</td><td><code>modprobe vhci-hcd</code></td></tr>\
+  <tr><td><code>usbip_vudc</code></td><td>Device emulation</td><td>USB/IP Virtual USB Device Controller \'97 allows a Linux machine to <em>emulate</em> a USB device (advanced, rarely used)</td><td><code>modprobe usbip_vudc</code></td></tr>\
+</table>\
+\
+<h3>The TCP Connection Lifecycle</h3>\
+<p>The client opens a TCP/IP connection to the server and sends an <code>OP_REQ_IMPORT</code> packet. The server replies with <code>OP_REP_IMPORT</code>. If the import was successful, the TCP/IP connection remains open and is used to transfer URB traffic between client and server. The client may send two types of packets: <code>USBIP_CMD_SUBMIT</code> to submit a URB, and <code>USBIP_CMD_UNLINK</code> to unlink a previously submitted URB. The server's answers are <code>USBIP_RET_SUBMIT</code> and <code>USBIP_RET_UNLINK</code> respectively.</p>\
+\
+<h3>Two-Phase Protocol</h3>\
+<div class="g2">\
+  <div class="card">\
+    <h4>Phase 1: Device Discovery</h4>\
+    <ul>\
+      <li>Client sends <code>OP_REQ_DEVLIST</code> to enumerate all exported devices</li>\
+      <li>Server responds with <code>OP_REP_DEVLIST</code> containing device descriptors</li>\
+      <li>Client chooses a device and sends <code>OP_REQ_IMPORT</code></li>\
+      <li>Server responds with <code>OP_REP_IMPORT</code> \'97 connection is now "attached"</li>\
+    </ul>\
+  </div>\
+  <div class="card">\
+    <h4>Phase 2: URB Transfer (ongoing)</h4>\
+    <ul>\
+      <li>Every USB I/O becomes a <code>USBIP_CMD_SUBMIT</code></li>\
+      <li>Server executes the URB against the physical device</li>\
+      <li>Response comes back as <code>USBIP_RET_SUBMIT</code></li>\
+      <li>Connection is full-duplex \'97 multiple URBs can be in flight simultaneously (pipelined by sequence number)</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<h3>The Userspace Daemon</h3>\
+<p>The <code>usbipd</code> daemon (part of the <code>usbutils</code> or <code>usbip</code> package on Linux) manages the lifecycle: starting the TCP listener, accepting connections, and coordinating with the kernel modules. On Windows, <code>usbipd-win</code> (dorssel) installs as a Windows Service that handles the same role.</p>\
+\
+<!-- ========== SECTION 3 ========== -->\
+<h2 id="s3"><span class="ico">\uc0\u55357 \u56545 </span> 3. The 4 USB Transfer Types \'97 Why They Matter for USB/IP</h2>\
+\
+<div class="sec-intro">\
+Every USB communication uses one of four transfer types. Understanding these is the key to predicting whether a device will work reliably over USB/IP \'97 and why webcams are so much harder than hard drives.\
+</div>\
+\
+<table>\
+  <tr>\
+    <th>Type</th>\
+    <th>Bandwidth guarantee</th>\
+    <th>Delivery guarantee</th>\
+    <th>Latency</th>\
+    <th>Max size / frame</th>\
+    <th>Used for</th>\
+    <th>USB/IP reliability</th>\
+  </tr>\
+  <tr>\
+    <td><strong>Control</strong></td>\
+    <td>Reserved (10%)</td>\
+    <td>Yes (retry)</td>\
+    <td>Low</td>\
+    <td>64 bytes (FS) / 512 (HS)</td>\
+    <td>Device enumeration, configuration, class commands</td>\
+    <td><span class="chk">\uc0\u10003  Excellent</span></td>\
+  </tr>\
+  <tr>\
+    <td><strong>Bulk</strong></td>\
+    <td>None (uses spare)</td>\
+    <td>Yes (retry)</td>\
+    <td>Variable</td>\
+    <td>512 bytes (HS) / 1024 (SS)</td>\
+    <td>Storage, printers, most peripherals</td>\
+    <td><span class="chk">\uc0\u10003  Excellent</span></td>\
+  </tr>\
+  <tr>\
+    <td><strong>Interrupt</strong></td>\
+    <td>Polling interval (1\'96255ms)</td>\
+    <td>Yes (retry)</td>\
+    <td>Guaranteed &lt;=interval</td>\
+    <td>64 bytes (FS) / 1024 (HS)</td>\
+    <td>HID: keyboard, mouse, gamepad, joystick</td>\
+    <td><span class="chk">\uc0\u10003  Good</span></td>\
+  </tr>\
+  <tr>\
+    <td><strong>Isochronous</strong></td>\
+    <td>Yes \'97 guaranteed bandwidth reservation</td>\
+    <td><strong>No</strong> \'97 drops silently</td>\
+    <td>Fixed period (1ms frames)</td>\
+    <td>1023 bytes (FS) / 3072 (HS)</td>\
+    <td>Webcams, audio, video capture, MIDI</td>\
+    <td><span class="pmk">\uc0\u9888 \u65039  Problematic</span></td>\
+  </tr>\
+</table>\
+\
+<div class="warn-box">\
+  <strong>\uc0\u9888 \u65039  The Fundamental Isochronous Problem:</strong> Isochronous transfers have guaranteed bandwidth but <em>no delivery guarantee</em> \'97 they are designed to drop packets rather than retransmit late data, because stale audio/video frames are useless. TCP, however, retransmits everything and adds variable latency (jitter). When you try to tunnel isochronous data over TCP, you get the worst of both: the timing requirements of isochronous with the variable latency of TCP. Any network jitter causes the VHCI to miss isochronous scheduling windows, producing corrupted streams, dropped frames, error messages in <code>dmesg</code>, or full device disconnection.\
+</div>\
+\
+<!-- ========== SECTION 4 ========== -->\
+<h2 id="s4"><span class="ico">\uc0\u55357 \u56580 </span> 4. Server vs Client \'97 Why the Naming is Backwards</h2>\
+\
+<div class="warn-box">\
+  "Client" and "server" are confusing. A server host has physical USB devices which are exported to a client host. In the server host, load <code>usbip_common_mod.ko</code> and <code>vhci-hcd.ko</code>, and then use <code>usbipd</code>. The client host imports a USB device virtually; the client host may not have a real USB device. In the client host, load <code>usbip_common_mod.ko</code> and <code>usbip.ko</code>, and then use <code>usbip</code>.\
+</div>\
+\
+<div class="g2">\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56741 \u65039  USB/IP SERVER = has the physical USB device</h4>\
+    <ul>\
+      <li>Runs <code>usbipd</code> daemon, listens on TCP 3240</li>\
+      <li>"Exports" devices to the network</li>\
+      <li>Loads <code>usbip_host</code> module</li>\
+      <li>Binds to USB device with <code>usbip bind</code></li>\
+      <li>Counter-intuitive: the machine with the hardware is the "server"</li>\
+    </ul>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56507  USB/IP CLIENT = wants to use the remote device</h4>\
+    <ul>\
+      <li>Runs <code>usbip attach</code> to connect to a server</li>\
+      <li>"Imports" a remote device, which appears locally</li>\
+      <li>Loads <code>vhci-hcd</code> module</li>\
+      <li>Applications on the client see a normal local USB device</li>\
+      <li>Can be both simultaneously \'97 export some devices while importing others</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<!-- ========== SECTION 5 ========== -->\
+<h2 id="s5"><span class="ico">\uc0\u55357 \u56550 </span> 5. USB/IP Protocol Wire Format</h2>\
+\
+<p>The USB/IP protocol is documented in the Linux kernel. Key operation codes:</p>\
+\
+<table>\
+  <tr><th>Op Code</th><th>Direction</th><th>Phase</th><th>Meaning</th></tr>\
+  <tr><td><code>OP_REQ_DEVLIST</code> (0x8005)</td><td>C\uc0\u8594 S</td><td>Discovery</td><td>Request list of exported devices</td></tr>\
+  <tr><td><code>OP_REP_DEVLIST</code> (0x0005)</td><td>S\uc0\u8594 C</td><td>Discovery</td><td>Response with device descriptors</td></tr>\
+  <tr><td><code>OP_REQ_IMPORT</code> (0x8003)</td><td>C\uc0\u8594 S</td><td>Discovery</td><td>Request to import (attach) a specific device</td></tr>\
+  <tr><td><code>OP_REP_IMPORT</code> (0x0003)</td><td>S\uc0\u8594 C</td><td>Discovery</td><td>Response to import request (success/fail)</td></tr>\
+  <tr><td><code>USBIP_CMD_SUBMIT</code> (0x00000001)</td><td>C\uc0\u8594 S</td><td>Transfer</td><td>Submit a URB to the device</td></tr>\
+  <tr><td><code>USBIP_RET_SUBMIT</code> (0x00000003)</td><td>S\uc0\u8594 C</td><td>Transfer</td><td>Return the result of a submitted URB</td></tr>\
+  <tr><td><code>USBIP_CMD_UNLINK</code> (0x00000002)</td><td>C\uc0\u8594 S</td><td>Transfer</td><td>Cancel (unlink) a previously submitted URB</td></tr>\
+  <tr><td><code>USBIP_RET_UNLINK</code> (0x00000004)</td><td>S\uc0\u8594 C</td><td>Transfer</td><td>Response to unlink (ECONNRESET status)</td></tr>\
+</table>\
+\
+<p>The protocol header uses big-endian byte order. Each <code>USBIP_CMD_SUBMIT</code> carries: command code, sequence number, device/bus IDs, direction, endpoint, URB transfer flags, buffer length, and the actual data payload. Isochronous packets also carry per-packet offsets and lengths.</p>\
+\
+<!-- ========== THE 7 TOOLS ========== -->\
+<h2 id="t1"><span class="ico">\uc0\u55357 \u56753 \u65039 </span> 6. Deskflow v1.26.0 \'97 Software KVM (NOT USB/IP)</h2>\
+\
+<div class="danger-box">\uc0\u9940  Deskflow shares input devices \'97 not USB devices. It has no USB/IP functionality whatsoever. It is in this guide only because it appeared in the original project list. Understanding what it <em>is</em> clarifies what USB/IP <em>isn't</em>.</div>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>Share keyboard and mouse seamlessly across multiple computers on a LAN</li>\
+      <li>Clipboard sync \'97 text, images, rich text</li>\
+      <li>Supports Windows 10+, macOS 12+, Linux (X11 via libei 1.3+ and Wayland via libportal 0.8+)</li>\
+      <li>TLS 1.3 encrypted connections by default</li>\
+      <li>Multi-monitor: move cursor through virtual screen edge</li>\
+      <li>Successor to Synergy 1 and Barrier \'97 actively maintained</li>\
+      <li>Auto-start as system service on all three OS families</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO</h4>\
+    <ul>\
+      <li>Forward raw USB devices of any kind</li>\
+      <li>Share webcams, audio interfaces, storage drives, dongles</li>\
+      <li>Forward video output (it moves input, not display)</li>\
+      <li>Act as any kind of USB/IP server or client</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tb">Keyboard/Mouse</span> <span class="tag tp">GUI</span> <span class="tag tg">Win/Mac/Linux</span> <span class="tag ty">Auto-start</span> <span class="tag tz">NOT USB/IP</span></p>\
+\
+<h2 id="t2"><span class="ico">\uc0\u55357 \u56615 </span> 7. cezanne/usbip-win</h2>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>First full USB/IP server + client port to Windows</li>\
+      <li>Both stub driver (server, exports devices) and VHCI driver (client, imports devices)</li>\
+      <li>Interoperates with Linux USB/IP stack</li>\
+      <li>Historically important \'97 pioneered Windows USB/IP</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO / PROBLEMS</h4>\
+    <ul>\
+      <li>Drivers are <strong>unsigned for modern Windows</strong> \'97 requires Test Mode or disabling DSE (Driver Signature Enforcement) on Win 10/11</li>\
+      <li>No GUI \'97 CLI only, complex manual install</li>\
+      <li>Largely unmaintained; no active development</li>\
+      <li>Should be treated as archived/deprecated \'97 use <code>usbip-win2</code> or <code>usbipd-win</code></li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tb">Server</span> <span class="tag tg">Client</span> <span class="tag tr">No GUI</span> <span class="tag tr">Deprecated</span> <span class="tag ty">Windows</span></p>\
+\
+<h2 id="t3"><span class="ico">\uc0\u55357 \u56615 </span> 8. vadimgrn/usbip-win2</h2>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>Modern Windows USB/IP client \'97 fully rewritten from cezanne's foundation</li>\
+      <li><strong>EV-signed drivers + Microsoft-attested binaries</strong> \'97 works on Windows 10/11 without disabling security features</li>\
+      <li>Zero-copy kernel-mode networking for lower overhead</li>\
+      <li>New API that reads device state via events rather than polling</li>\
+      <li>Clean device disconnect handling when physically unplugged on server</li>\
+      <li>Interoperates with any Linux USB/IP server (kernel stack)</li>\
+      <li>Includes a basic GUI utility alongside the CLI</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO</h4>\
+    <ul>\
+      <li><strong>Server mode removed</strong> \'97 client only in recent versions; use <code>usbipd-win</code> for server on Windows</li>\
+      <li>Windows only \'97 no Linux/macOS support</li>\
+      <li>Setup still requires manual driver install steps</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tg">Client</span> <span class="tag tp">Basic GUI</span> <span class="tag tg">Signed Drivers</span> <span class="tag ty">Windows 10/11</span></p>\
+\
+<h2 id="t4"><span class="ico">\uc0\u55356 \u57255 </span> 9. seastwood/usb-audio-ip-client</h2>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>Linux GUI client integrating USB/IP with PipeWire for audio + USB input</li>\
+      <li>Designed for Linux gaming: forward controllers + audio from a headless gaming PC to a secondary machine (e.g., Steam Deck)</li>\
+      <li>Handles the complexity of isochronous audio streams specifically</li>\
+      <li>Popular in the SteamOS / Steam Deck / Linux gaming community</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO</h4>\
+    <ul>\
+      <li>Not a general USB/IP client \'97 specialized for audio and gamepad use</li>\
+      <li>Linux only (tested on openSUSE, Fedora)</li>\
+      <li>Does not provide a USB/IP server \'97 requires a separate server on the other machine</li>\
+      <li>Not suitable for storage, webcams, or arbitrary USB devices</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tg">Client</span> <span class="tag tp">GUI</span> <span class="tag tb">Linux only</span> <span class="tag ty">Audio+Gamepad</span></p>\
+\
+<h2 id="t5"><span class="ico">\uc0\u55357 \u56741 \u65039 </span> 10. K-Francis-H/usbip-gui</h2>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>Python/Tkinter GUI frontend for Linux <code>usbip</code> CLI commands</li>\
+      <li>List available USB/IP servers, attach and detach devices visually</li>\
+      <li>Good for Linux users who prefer not to use the terminal</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO</h4>\
+    <ul>\
+      <li>Linux only \'97 no Windows or macOS</li>\
+      <li>Client-side only, no server management</li>\
+      <li>No auto-connect or persistence features</li>\
+      <li>Requires working underlying <code>usbip</code> kernel modules separately</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tg">Client GUI</span> <span class="tag tb">Linux only</span> <span class="tag tz">Minimal</span></p>\
+\
+<h2 id="t6"><span class="ico">\uc0\u55358 \u56991 </span> 11. featherbear/wsl-usb-gui</h2>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>Windows GUI wrapper for forwarding USB devices from Windows host into WSL2</li>\
+      <li>Wraps <code>usbipd-win</code> commands in a visual interface</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO</h4>\
+    <ul>\
+      <li>WSL-only \'97 cannot connect to remote Linux or Windows USB/IP servers</li>\
+      <li>No auto-connect profiles</li>\
+      <li>No system tray / background service</li>\
+      <li>Effectively superseded by nickbeth/wsl-usb-manager</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tg">Client (WSL)</span> <span class="tag tp">GUI</span> <span class="tag tz">Superseded</span></p>\
+\
+<h2 id="t7"><span class="ico">\uc0\u11088 </span> 12. nickbeth/wsl-usb-manager \'97 Best All-Around GUI</h2>\
+\
+<div class="g2">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  CAN DO</h4>\
+    <ul>\
+      <li>Written in Rust \'97 extremely lightweight (&lt;3MB RAM, instant startup)</li>\
+      <li>Full GUI for <code>usbipd-win</code> operations: bind, unbind, attach, detach</li>\
+      <li>Attach devices to <strong>WSL2 distributions</strong></li>\
+      <li>Connect to <strong>remote Linux USB/IP servers</strong></li>\
+      <li>Connect to <strong>remote Windows usbipd-win servers</strong></li>\
+      <li><strong>Persistent auto-attach profiles</strong> \'97 devices reattach automatically after unplug or reboot</li>\
+      <li>Windows system tray icon \'97 runs silently in background</li>\
+      <li>Select which WSL distribution to attach to</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  CANNOT DO</h4>\
+    <ul>\
+      <li>Windows-only UI (though it controls connections to Linux servers)</li>\
+      <li>Not a USB/IP server itself \'97 orchestrates <code>usbipd-win</code></li>\
+      <li>Requires <code>usbipd-win</code> to be installed as the backend</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<p><span class="tag tg">Client</span> <span class="tag tp">GUI</span> <span class="tag tg">Auto-attach</span> <span class="tag tg">Tray</span> <span class="tag tb">Rust / Windows</span></p>\
+\
+<!-- ========== COMPARISON ========== -->\
+<h2 id="compare"><span class="ico">\uc0\u9878 \u65039 </span> 13. Complete Comparison Table \'97 All 7 Tools</h2>\
+\
+<table>\
+  <tr>\
+    <th>Tool</th><th>USB/IP?</th><th>Server</th><th>Client</th><th>GUI</th><th>OS</th><th>Auto</th><th>Signed Drivers</th><th>Status</th>\
+  </tr>\
+  <tr><td><strong>Deskflow</strong></td><td><span class="xmk">\uc0\u10007 </span> KVM</td><td><span class="pmk">~</span></td><td><span class="pmk">~</span></td><td><span class="chk">\u10003 </span></td><td>All</td><td><span class="chk">\u10003 </span></td><td>N/A</td><td><span class="tag tg">Active</span></td></tr>\
+  <tr><td><strong>cezanne/usbip-win</strong></td><td><span class="chk">\uc0\u10003 </span></td><td><span class="chk">\u10003 </span></td><td><span class="chk">\u10003 </span></td><td><span class="xmk">\u10007 </span></td><td>Windows</td><td><span class="xmk">\u10007 </span></td><td><span class="xmk">\u10007 </span></td><td><span class="tag tr">Deprecated</span></td></tr>\
+  <tr><td><strong>vadimgrn/usbip-win2</strong></td><td><span class="chk">\uc0\u10003 </span></td><td><span class="xmk">\u10007 </span></td><td><span class="chk">\u10003 </span></td><td><span class="pmk">~</span></td><td>Windows</td><td><span class="xmk">\u10007 </span></td><td><span class="chk">\u10003 </span></td><td><span class="tag tg">Active</span></td></tr>\
+  <tr><td><strong>usb-audio-ip-client</strong></td><td><span class="chk">\uc0\u10003 </span></td><td><span class="xmk">\u10007 </span></td><td><span class="chk">\u10003 </span></td><td><span class="chk">\u10003 </span></td><td>Linux</td><td><span class="xmk">\u10007 </span></td><td>N/A</td><td><span class="tag ty">Niche</span></td></tr>\
+  <tr><td><strong>K-Francis-H/usbip-gui</strong></td><td><span class="chk">\uc0\u10003 </span></td><td><span class="xmk">\u10007 </span></td><td><span class="chk">\u10003 </span></td><td><span class="chk">\u10003 </span></td><td>Linux</td><td><span class="xmk">\u10007 </span></td><td>N/A</td><td><span class="tag tz">Minimal</span></td></tr>\
+  <tr><td><strong>featherbear/wsl-usb-gui</strong></td><td><span class="chk">\uc0\u10003 </span></td><td><span class="xmk">\u10007 </span></td><td>WSL only</td><td><span class="chk">\u10003 </span></td><td>Win\u8594 WSL</td><td><span class="xmk">\u10007 </span></td><td>Via usbipd</td><td><span class="tag tz">Superseded</span></td></tr>\
+  <tr><td><strong>nickbeth/wsl-usb-manager</strong></td><td><span class="chk">\uc0\u10003 </span></td><td><span class="xmk">\u10007 </span></td><td><span class="chk">\u10003 </span></td><td><span class="chk">\u10003 </span></td><td>Win\u8594 All</td><td><span class="chk">\u10003 </span></td><td>Via usbipd</td><td><span class="tag tg">Best GUI</span></td></tr>\
+</table>\
+\
+<div class="ok-box">\
+  <strong>\uc0\u55357 \u56593  The Missing Backbone:</strong> <code>dorssel/usbipd-win</code> is not in the original list but is the foundational tool that makes Windows USB/IP work. It installs a service called <code>usbipd</code> (display name: USBIP Device Host), a command line tool <code>usbipd</code> added to PATH, and a firewall rule to allow local subnets to connect on TCP port 3240. Sharing a device is persistent \'97 it survives reboots.\
+</div>\
+\
+<!-- ========== VIDEO ========== -->\
+<h2 id="video"><span class="ico">\uc0\u55357 \u56567 </span> 14. USB Webcam/Video Streaming Over USB/IP \'97 Is It Possible?</h2>\
+\
+<div class="warn-box">\
+  <strong>Short answer:</strong> Technically yes in limited scenarios. Practically, high-quality video over USB/IP is unreliable and not production-ready for most setups. Here's the full picture with no sugar-coating.\
+</div>\
+\
+<p>According to the original USB/IP project, a remote USB webcam with an ov511 chip can be virtually attached to a computer. However, this was demonstrated on a Gigabit LAN under controlled conditions in 2005. Modern expectations \'97 1080p at 30fps, multiple cameras, compressed or uncompressed \'97 change the calculus dramatically.</p>\
+\
+<p>After binding and attaching a webcam via USB/IP, you should be able to use it as a normal device \'97 for example, <code>gst-launch v4l2src device=/dev/video0</code> \'97 but success depends heavily on the webcam's transfer type, resolution, compression format, and network conditions.</p>\
+\
+<h3>What Determines Success or Failure</h3>\
+<div class="g3">\
+  <div class="card cg">\
+    <h4>\uc0\u9989  FAVORABLE conditions</h4>\
+    <ul>\
+      <li>Gigabit wired Ethernet (\uc0\u8804 1ms jitter)</li>\
+      <li>Webcam supports MJPEG or H.264 compression</li>\
+      <li>Low resolution (640\'d7480 or 320\'d7240)</li>\
+      <li>Low frame rate (15fps or below)</li>\
+      <li>Only one camera at a time</li>\
+      <li>Running on a high-performance server-class CPU</li>\
+    </ul>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  UNFAVORABLE conditions</h4>\
+    <ul>\
+      <li>WiFi (variable jitter, packet loss)</li>\
+      <li>Uncompressed YUYV/NV12 format only</li>\
+      <li>1080p or higher resolution</li>\
+      <li>Multiple simultaneous cameras</li>\
+      <li>Any WAN / Internet connection</li>\
+      <li>The camera uses USB 3.0 SuperSpeed only</li>\
+    </ul>\
+  </div>\
+  <div class="card cy">\
+    <h4>\uc0\u9888 \u65039  MARGINAL \'97 depends on everything</h4>\
+    <ul>\
+      <li>MJPEG at 720p @ 30fps on Gigabit</li>\
+      <li>USB audio at the same time as USB video</li>\
+      <li>1Gbps switches with QoS prioritizing port 3240</li>\
+      <li>Compressed webcams with USB 2.0 SuperSpeed fallback</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<h2 id="iso"><span class="ico">\uc0\u9201 \u65039 </span> 15. Isochronous Transfers \'97 The Root Cause of Video Problems</h2>\
+\
+<h3>The Bandwidth Math</h3>\
+<div class="g2">\
+  <div class="card">\
+    <h4>YUYV Uncompressed (worst case)</h4>\
+    <ul>\
+      <li>320\'d7240 @ 30fps = ~3.3 MB/s raw</li>\
+      <li>640\'d7480 @ 30fps = ~13 MB/s raw</li>\
+      <li>1280\'d7720 @ 30fps = ~33 MB/s raw \uc0\u8592  <strong>already 44% of USB 2.0 isochronous budget</strong></li>\
+      <li>1920\'d71080 @ 30fps = ~74 MB/s raw \uc0\u8592  <strong>exceeds entire USB 2.0 isochronous budget</strong></li>\
+      <li>Add TCP overhead (+8\'9612%), USB/IP headers (+headers per URB), and kernel processing \uc0\u8594  numbers grow</li>\
+    </ul>\
+  </div>\
+  <div class="card">\
+    <h4>MJPEG Compressed (better case)</h4>\
+    <ul>\
+      <li>320\'d7240 @ 30fps \uc0\u8776  0.5\'961 MB/s compressed</li>\
+      <li>640\'d7480 @ 30fps \uc0\u8776  1\'963 MB/s compressed</li>\
+      <li>1280\'d7720 @ 30fps \uc0\u8776  3\'968 MB/s compressed \u8592  <strong>viable on Gigabit LAN</strong></li>\
+      <li>1920\'d71080 @ 30fps \uc0\u8776  8\'9620 MB/s compressed \u8592  <strong>marginal on Gigabit LAN</strong></li>\
+      <li>Compression ratio depends on scene content \'97 fast-moving scenes need more bandwidth</li>\
+    </ul>\
+  </div>\
+</div>\
+\
+<h3>Why TCP Jitter Kills Isochronous</h3>\
+<p>USB isochronous transfers are scheduled in 1ms microframes (USB 2.0 HS) or 125\'b5s microframes (USB 3.x). The VHCI driver on the client must submit isochronous URBs at precise intervals matching this schedule. When a TCP packet arrives late (even by 2\'965ms, easily caused by a congested switch), the VHCI driver cannot queue the URB in time. The result is:</p>\
+<ul>\
+  <li><code>-EXDEV</code> or <code>-EINVAL</code> URB errors in kernel log</li>\
+  <li>Corrupted video frames / green/black frames</li>\
+  <li>V4L2 reporting broken pipe or device removed</li>\
+  <li>Complete disconnection requiring manual re-attach</li>\
+</ul>\
+\
+<h2 id="formats"><span class="ico">\uc0\u55356 \u57260 </span> 16. Video Format Compatibility Table</h2>\
+\
+<table>\
+  <tr><th>Format</th><th>Compression</th><th>USB Transfer</th><th>USB/IP Viable?</th><th>Notes</th></tr>\
+  <tr><td>YUYV / YUV422</td><td>None (raw)</td><td>Isochronous</td><td><span class="xmk">\uc0\u10007  Fails at HD</span></td><td>Most common default; huge bandwidth; 1080p exceeds USB 2.0 isochronous budget</td></tr>\
+  <tr><td>NV12 / I420</td><td>None (planar YUV)</td><td>Isochronous</td><td><span class="xmk">\uc0\u10007  Fails at HD</span></td><td>Same as YUYV in terms of bandwidth requirements</td></tr>\
+  <tr><td>MJPEG</td><td>Per-frame JPEG</td><td>Isochronous</td><td><span class="pmk">\uc0\u9888 \u65039  Sometimes works</span></td><td>4\'9610\'d7 smaller than raw; best option for USB/IP; try at 640\'d7480 first</td></tr>\
+  <tr><td>H.264 (on-camera)</td><td>Inter-frame</td><td>Bulk or Iso</td><td><span class="pmk">\uc0\u9888 \u65039  Often works</span></td><td>Some webcams encode H.264 in hardware; much lower bandwidth; if bulk transfer, good chance of working</td></tr>\
+  <tr><td>H.265/HEVC (on-camera)</td><td>Inter-frame</td><td>Bulk or Iso</td><td><span class="pmk">\uc0\u9888 \u65039  Often works</span></td><td>Even lower bandwidth than H.264; rare in webcams but growing</td></tr>\
+  <tr><td>USB Audio (Class 1)</td><td>PCM</td><td>Isochronous</td><td><span class="chk">\uc0\u10003  Usually works</span></td><td>Much lower bandwidth than video; 44.1kHz stereo = ~0.17 MB/s; viable on LAN</td></tr>\
+  <tr><td>USB Audio (Class 2)</td><td>PCM</td><td>Isochronous</td><td><span class="pmk">\uc0\u9888 \u65039  Variable</span></td><td>Higher sample rates (192kHz, 32-bit, multi-channel) increase bandwidth; still manageable on Gigabit</td></tr>\
+  <tr><td>USB Video Capture (HDMI\uc0\u8594 USB)</td><td>None/MJPEG</td><td>Isochronous/Bulk</td><td><span class="xmk">\u10007  Usually fails</span></td><td>Elgato, Blackmagic, generic USB capture cards; high bandwidth, often proprietary; avoid with USB/IP</td></tr>\
+</table>\
+\
+<h2 id="videobetter"><span class="ico">\uc0\u55356 \u57253 </span> 17. Better Alternatives for Webcam/Video Over Network</h2>\
+\
+<table>\
+  <tr><th>Tool</th><th>Approach</th><th>OS</th><th>Free?</th><th>Latency</th><th>Best for</th></tr>\
+  <tr><td><strong>GStreamer</strong></td><td>Pipeline: V4L2 \uc0\u8594  encode \u8594  RTP/RTSP over LAN</td><td>All</td><td><span class="tag tg">Free</span></td><td>~100\'96200ms</td><td>LAN video streaming, scriptable pipelines</td></tr>\
+  <tr><td><strong>FFmpeg + RTMP/SRT</strong></td><td>Capture V4L2 \uc0\u8594  encode \u8594  stream</td><td>All</td><td><span class="tag tg">Free</span></td><td>~200\'96500ms</td><td>Flexible, powerful, every codec supported</td></tr>\
+  <tr><td><strong>Sunshine + Moonlight</strong></td><td>Game stream + USB controller passthrough</td><td>Win/Linux/Mac</td><td><span class="tag tg">Free</span></td><td>~10\'9630ms</td><td>Gaming, remote desktop with video</td></tr>\
+  <tr><td><strong>v4l2loopback + netcat</strong></td><td>Pipe V4L2 frames over TCP into virtual cam</td><td>Linux</td><td><span class="tag tg">Free</span></td><td>~50ms</td><td>Simple LAN hacks, development</td></tr>\
+  <tr><td><strong>OBS + SRT/RTMP output</strong></td><td>Full studio \uc0\u8594  network output</td><td>Win/Mac/Linux</td><td><span class="tag tg">Free</span></td><td>~200ms</td><td>High-quality streaming, professional setups</td></tr>\
+  <tr><td><strong>MediaMTX (rtsp-simple-server)</strong></td><td>RTSP/RTMP/HLS/WebRTC server</td><td>All</td><td><span class="tag tg">Free</span></td><td>~50\'96150ms</td><td>Easy self-hosted RTSP from any V4L2 source</td></tr>\
+  <tr><td><strong>VirtualHere</strong></td><td>Proprietary USB-over-IP with better iso handling</td><td>All</td><td><span class="tag ty">Freemium</span></td><td>Low</td><td>When you need the device to appear as a real USB webcam specifically</td></tr>\
+  <tr><td><strong>v4l2rtspserver</strong></td><td>Minimal RTSP server for V4L2 devices</td><td>Linux</td><td><span class="tag tg">Free</span></td><td>~100ms</td><td>Lightweight Raspberry Pi webcam streaming</td></tr>\
+  <tr><td><strong>Scrcpy</strong></td><td>Mirror Android phone screen over USB/TCP</td><td>Android+PC</td><td><span class="tag tg">Free</span></td><td>~35ms</td><td>Use phone camera as webcam</td></tr>\
+</table>\
+\
+<!-- ========== DEVICE COMPATIBILITY ========== -->\
+<h2 id="works"><span class="ico">\uc0\u9989 </span> 18. Complete Device Compatibility List</h2>\
+\
+<table>\
+  <tr><th>Device Type</th><th>Transfer Type</th><th>USB/IP</th><th>Notes</th></tr>\
+  <tr><td>USB Flash Drives / SSDs</td><td>Bulk</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Full fdisk/mkfs/mount support; classic use case; works over WAN too</td></tr>\
+  <tr><td>USB Hard Drives</td><td>Bulk</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Speed limited by network, not USB; Gigabit supports ~100MB/s</td></tr>\
+  <tr><td>USB Printers</td><td>Bulk</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Explicitly demonstrated in original paper; enterprise use case</td></tr>\
+  <tr><td>USB Scanners</td><td>Bulk</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>SANE (Scanner Access Now Easy) works over USB/IP without modification</td></tr>\
+  <tr><td>USB Keyboards</td><td>Interrupt</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Small payloads; works on console and X11/Wayland</td></tr>\
+  <tr><td>USB Mice</td><td>Interrupt</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Original paper demonstrated this; works over LAN with sub-5ms latency</td></tr>\
+  <tr><td>USB Gamepads / Joysticks</td><td>Interrupt</td><td><span class="chk">\uc0\u10003  Good</span></td><td>Very popular with Steam Deck / Linux gaming setups; sub-10ms typically</td></tr>\
+  <tr><td>USB Serial (FTDI, CH340, CP210x)</td><td>Bulk</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Appears as /dev/ttyUSBx; perfect for remote microcontroller access</td></tr>\
+  <tr><td>USB Serial (CDC-ACM)</td><td>Bulk/Interrupt</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Arduino, STM32, ESP32, etc.; appears as /dev/ttyACM0</td></tr>\
+  <tr><td>USB Security Dongles (HID)</td><td>HID/Control</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>License dongles; most common enterprise use case; works over VPN</td></tr>\
+  <tr><td>Smartcard Readers</td><td>Control/Interrupt</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>PKI, CAC cards, authentication tokens</td></tr>\
+  <tr><td>USB Ethernet Adapters</td><td>Bulk</td><td><span class="chk">\uc0\u10003  Works</span></td><td>Unusual (networking over networking) but technically works</td></tr>\
+  <tr><td>USB GPS Receivers</td><td>Bulk/Serial</td><td><span class="chk">\uc0\u10003  Good</span></td><td>Appears as serial port; NMEA data works fine over USB/IP</td></tr>\
+  <tr><td>USB Bluetooth Adapters</td><td>Bulk+Interrupt+Iso</td><td><span class="pmk">\uc0\u9888 \u65039  Limited</span></td><td>Mixed transfer types; basic BT may work; high-bandwidth BT audio may not</td></tr>\
+  <tr><td>USB WiFi Adapters</td><td>Bulk+Interrupt</td><td><span class="pmk">\uc0\u9888 \u65039  Sometimes</span></td><td>Depends on driver and chipset; may work for basic networking</td></tr>\
+  <tr><td>USB Audio (Class 1, 44.1kHz)</td><td>Isochronous</td><td><span class="chk">\uc0\u10003  Usually works</span></td><td>Low bandwidth; most USB headsets and basic interfaces work on Gigabit LAN</td></tr>\
+  <tr><td>USB Audio (Class 2, \uc0\u8805 96kHz)</td><td>Isochronous</td><td><span class="pmk">\u9888 \u65039  Variable</span></td><td>Higher sample rates; 24-bit 192kHz stereo \u8776  0.9MB/s; usually OK on Gigabit</td></tr>\
+  <tr><td>USB Audio (multi-channel)</td><td>Isochronous</td><td><span class="pmk">\uc0\u9888 \u65039  Variable</span></td><td>16+ channel interfaces (Focusrite Scarlett 18i20 etc.) need ~10MB/s; marginal</td></tr>\
+  <tr><td>USB Webcam (MJPEG, 640\'d7480)</td><td>Isochronous</td><td><span class="pmk">\uc0\u9888 \u65039  Sometimes</span></td><td>Low bandwidth; Gigabit LAN; try 320\'d7240 first</td></tr>\
+  <tr><td>USB Webcam (YUYV, 720p+)</td><td>Isochronous</td><td><span class="xmk">\uc0\u10007  Usually fails</span></td><td>Too much bandwidth; TCP jitter fatal for isochronous scheduling</td></tr>\
+  <tr><td>USB Webcam (H.264 on-camera)</td><td>Bulk or Iso</td><td><span class="pmk">\uc0\u9888 \u65039  Often works</span></td><td>Compressed on camera \u8594  much lower bandwidth; best chance for video</td></tr>\
+  <tr><td>USB Video Capture Cards</td><td>Isochronous</td><td><span class="xmk">\uc0\u10007  Fails</span></td><td>Very high bandwidth; often proprietary protocols; don't try with USB/IP</td></tr>\
+  <tr><td>USB TV Tuners</td><td>Isochronous</td><td><span class="xmk">\uc0\u10007  Fails</span></td><td>High isochronous bandwidth; timing-critical; not viable over TCP</td></tr>\
+  <tr><td>USB 3D Printers (serial)</td><td>Bulk/Serial</td><td><span class="chk">\uc0\u10003  Good</span></td><td>G-code via serial; works perfectly over USB/IP</td></tr>\
+  <tr><td>USB Drawing Tablets (Wacom etc.)</td><td>Interrupt/HID</td><td><span class="chk">\uc0\u10003  Good</span></td><td>HID protocol; works on LAN; latency may be noticeable for drawing</td></tr>\
+  <tr><td>USB Microscopes</td><td>Isochronous</td><td><span class="pmk">\uc0\u9888 \u65039  Partial</span></td><td>Depends on compression; MJPEG models better than raw YUYV</td></tr>\
+  <tr><td>USB NFC Readers</td><td>Interrupt/HID</td><td><span class="chk">\uc0\u10003  Good</span></td><td>Small payloads; works fine on LAN</td></tr>\
+  <tr><td>USB UPS (APC, CyberPower)</td><td>HID</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td>Popular homelab use case \'97 monitor UPS from a VM/container via USB/IP</td></tr>\
+  <tr><td>USB MIDI Controllers</td><td>Isochronous/Interrupt</td><td><span class="pmk">\uc0\u9888 \u65039  Variable</span></td><td>MIDI data itself is tiny; latency must be &lt;3ms for live playing; only on very fast LAN</td></tr>\
+</table>\
+\
+<h2 id="fails"><span class="ico">\uc0\u10060 </span> 19. Hard Limits \'97 What USB/IP Cannot Do</h2>\
+\
+<div class="g2">\
+  <div class="card cr">\
+    <h4>\uc0\u10060  No Native Encryption or Authentication</h4>\
+    <p>USB/IP protocol has zero security mechanisms. Any machine that can reach TCP port 3240 can enumerate and attach your USB devices. This is a fundamental protocol design choice, not a bug. Must use SSH tunnel, WireGuard, or firewall rules.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  No USB Power Delivery</h4>\
+    <p>USB/IP forwards data only. A device that is powered by or charges via USB will not receive power through a USB/IP connection. If the device needs USB power to operate, it must be powered locally at the server side.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  macOS Support \'97 Nearly Nonexistent</h4>\
+    <p>There is no official USB/IP support for macOS. Experimental ports exist but are not production-ready as of 2026. macOS is essentially unsupported as either a USB/IP server or client natively.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  USB 3.x SuperSpeed Over Real Networks</h4>\
+    <p>USB 3.0 (5 Gbps), USB 3.1 (10 Gbps), and USB 3.2 (20 Gbps) devices' speeds are limited by the network itself. A 1 Gbps Ethernet connection can never saturate a USB 3.0 bus. USB/IP will always be the bottleneck.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  Sub-Millisecond Timing</h4>\
+    <p>Industrial USB devices needing microsecond-precise timing (certain DACs, high-precision motion controllers, some scientific instruments) cannot work reliably over any IP network due to inherent TCP jitter.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>\uc0\u10060  USB Gadget Mode / OTG Emulation</h4>\
+    <p>USB/IP is for sharing real devices, not for making a computer emulate a USB device to another computer. USB gadget mode (<code>g_cdc</code>, <code>g_mass_storage</code>) is a separate Linux kernel feature. (Though VUDC \'97 Virtual USB Device Controller \'97 is an experimental USB/IP extension for this.)</p>\
+  </div>\
+</div>\
+\
+<h2 id="latency"><span class="ico">\uc0\u55357 \u56522 </span> 20. LAN vs WiFi vs WAN Performance</h2>\
+\
+<table>\
+  <tr><th>Device Type</th><th>Gigabit LAN</th><th>100Mbps LAN</th><th>WiFi 5GHz</th><th>WiFi 2.4GHz</th><th>VPN over Internet</th></tr>\
+  <tr><td>USB Mass Storage</td><td><span class="chk">\uc0\u10003  ~100MB/s</span></td><td><span class="chk">\u10003  ~10MB/s</span></td><td><span class="chk">\u10003  ~30\'9680MB/s</span></td><td><span class="pmk">~ ~10\'9630MB/s</span></td><td><span class="chk">\u10003  ISP limited</span></td></tr>\
+  <tr><td>HID (keyboard/mouse)</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td><span class="chk">\u10003  Excellent</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="chk">\u10003  Usable</span></td></tr>\
+  <tr><td>USB Serial</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td><span class="chk">\u10003  Excellent</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="chk">\u10003  Works</span></td></tr>\
+  <tr><td>USB Security Dongles</td><td><span class="chk">\uc0\u10003  Excellent</span></td><td><span class="chk">\u10003  Excellent</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="chk">\u10003  Excellent</span></td></tr>\
+  <tr><td>USB Audio (Class 1)</td><td><span class="chk">\uc0\u10003  Good</span></td><td><span class="chk">\u10003  Good</span></td><td><span class="pmk">\u9888 \u65039  Variable</span></td><td><span class="xmk">\u10007  Unreliable</span></td><td><span class="xmk">\u10007  Fails</span></td></tr>\
+  <tr><td>USB Webcam (MJPEG 640p)</td><td><span class="pmk">\uc0\u9888 \u65039  Sometimes</span></td><td><span class="pmk">\u9888 \u65039  Marginal</span></td><td><span class="xmk">\u10007  Unreliable</span></td><td><span class="xmk">\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td></tr>\
+  <tr><td>USB Webcam (YUYV 1080p)</td><td><span class="xmk">\uc0\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td></tr>\
+  <tr><td>USB MIDI (live playing)</td><td><span class="pmk">\uc0\u9888 \u65039  Marginal</span></td><td><span class="xmk">\u10007  Too much latency</span></td><td><span class="xmk">\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td><td><span class="xmk">\u10007  Fails</span></td></tr>\
+</table>\
+\
+<!-- ========== SECURITY ========== -->\
+<h2 id="security"><span class="ico">\uc0\u55357 \u56592 </span> 21. USB/IP Has Zero Native Security \'97 Full Threat Model</h2>\
+\
+<div class="danger-box">\
+  <strong>\uc0\u9940  CRITICAL:</strong> USB/IP has no authentication, no encryption, and no access control in its protocol. Running USB/IP with port 3240 exposed to an untrusted network is a severe security risk. Anyone who can connect to that port can enumerate all exported devices and attach them \'97 potentially exfiltrating data from USB storage or cloning security tokens.\
+</div>\
+\
+<h3>Threat Scenarios</h3>\
+<div class="g2">\
+  <div class="card cr">\
+    <h4>Attacker on local network</h4>\
+    <p>Any device on the same LAN can connect to port 3240 without credentials, see all exported devices, and attach them. For shared networks (corporate WiFi, shared housing), this is a real risk.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>Man-in-the-middle</h4>\
+    <p>USB/IP traffic is unencrypted plaintext. An attacker who can intercept traffic (ARP poisoning, compromised switch) can read all data sent to/from the USB device, including storage files, keystrokes from HID devices, and authentication tokens.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>Exposed to the Internet</h4>\
+    <p>If port 3240 is forwarded through a router to the Internet, any scanning bot worldwide can discover and interact with your USB devices. This must never be done without a VPN wrapper.</p>\
+  </div>\
+  <div class="card cr">\
+    <h4>usbipd-win firewall rule scope</h4>\
+    <p>The installer creates a firewall rule called <code>usbipd</code> allowing all local subnets to connect to the service. You can modify this firewall rule to fine-tune access control. Narrow this to specific IP addresses in production environments.</p>\
+  </div>\
+</div>\
+\
+<h2 id="ssh-tunnel"><span class="ico">\uc0\u55357 \u56594 </span> 22. SSH Tunnel Method \'97 Step by Step</h2>\
+\
+<p>SSH tunneling is the simplest way to add encryption and authentication to USB/IP over an untrusted network. You can set up a reverse tunnel by SSH from Windows to Linux \'97 using <code>ssh.exe user@&lt;IP-address-of-Linux-reachable-from-Windows&gt; -R &lt;IP-address-of-Linux&gt;:127.0.0.1:3240</code> \'97 which allows the Linux machine to reach the Windows USB/IP server as if it were local.</p>\
+\
+<h3>Forward Tunnel (Linux client \uc0\u8594  Linux server over SSH)</h3>\
+<pre>\
+<span class="cm"># On the CLIENT \'97 forward remote port 3240 to local 3240</span>\
+ssh -L 3240:localhost:3240 user@usb-server.example.com -N &amp;\
+\
+<span class="cm"># Then attach as if the server were local</span>\
+sudo usbip attach -r 127.0.0.1 -b 1-1.5\
+</pre>\
+\
+<h3>Reverse Tunnel (Windows server \uc0\u8594  Linux client)</h3>\
+<pre>\
+<span class="cm"># On the WINDOWS machine \'97 forward local port 3240 back through SSH to Linux</span>\
+ssh.exe user@linux-client.example.com -R 127.0.0.1:3240:127.0.0.1:3240 -N\
+\
+<span class="cm"># On the Linux client \'97 now attach via 127.0.0.1</span>\
+sudo usbip attach -r 127.0.0.1 -b 1-1\
+</pre>\
+\
+<h3>Making the SSH Tunnel Persistent with systemd</h3>\
+<pre>\
+<span class="cm"># /etc/systemd/system/usbip-ssh-tunnel.service</span>\
+[Unit]\
+Description=SSH tunnel for USB/IP\
+After=network-online.target\
+Wants=network-online.target\
+\
+[Service]\
+User=usbipuser\
+ExecStart=/usr/bin/ssh -NL 3240:localhost:3240 \\\
+  -o ServerAliveInterval=30 \\\
+  -o ServerAliveCountMax=3 \\\
+  -o ExitOnForwardFailure=yes \\\
+  -i /home/usbipuser/.ssh/usbip_key \\\
+  user@usb-server.example.com\
+Restart=on-failure\
+RestartSec=10\
+\
+[Install]\
+WantedBy=multi-user.target\
+</pre>\
+\
+<h2 id="wireguard"><span class="ico">\uc0\u55357 \u57057 \u65039 </span> 23. WireGuard VPN \'97 Best Practice for USB/IP Over WAN</h2>\
+\
+<p>WireGuard is a communication protocol and free and open-source software that implements encrypted virtual private networks. It aims to be lighter and better performing than IPsec and OpenVPN. The WireGuard protocol passes traffic over UDP. In March 2020, the Linux version reached a stable production release and was incorporated into the Linux 5.6 kernel.</p>\
+\
+<p>WireGuard is compatible with Windows, macOS, Android, and iOS in addition to Linux. Its lean codebase of around 4,000 lines, compared to tens of thousands in other VPN protocols, makes security auditing far simpler. It uses public key cryptography for authentication, eliminating the need for traditional certificate authorities.</p>\
+\
+<div class="ok-box">\
+  <strong>WireGuard is the recommended tunnel for USB/IP over any untrusted network.</strong> Once both machines are on the same WireGuard VPN, USB/IP traffic flows over the encrypted WireGuard interface. You connect to the WireGuard IP address of the server instead of its public IP. No firewall exposure of port 3240 needed.\
+</div>\
+\
+<p>Note: WireGuard explicitly does not support tunneling over TCP, due to the classically terrible network performance of tunneling TCP-over-TCP. Rather, transforming WireGuard's UDP packets into TCP is the job of an upper layer of obfuscation, and can be accomplished by projects like udptunnel and udp2raw. For USB/IP (which is already TCP), this is fine \'97 USB/IP's TCP runs inside WireGuard's UDP, not the other way around.</p>\
+\
+<h2 id="firewall"><span class="ico">\uc0\u55358 \u56817 </span> 24. Firewall Rules and Access Control</h2>\
+\
+<pre>\
+<span class="cm"># Linux \'97 allow only specific host to connect to USB/IP</span>\
+iptables -A INPUT -p tcp --dport 3240 -s 192.168.1.50 -j ACCEPT\
+iptables -A INPUT -p tcp --dport 3240 -j DROP\
+\
+<span class="cm"># Or with nftables:</span>\
+nft add rule inet filter input ip saddr 192.168.1.50 tcp dport 3240 accept\
+nft add rule inet filter input tcp dport 3240 drop\
+\
+<span class="cm"># ufw (Ubuntu/Debian):</span>\
+ufw allow from 192.168.1.50 to any port 3240\
+\
+<span class="cm"># Windows PowerShell \'97 narrow the usbipd firewall rule to a specific IP:</span>\
+Set-NetFirewallRule -Name "usbipd" -RemoteAddress 192.168.1.50\
+</pre>\
+\
+<!-- ========== AUTO-CONNECT ========== -->\
+<h2 id="auto-linux"><span class="ico">\uc0\u55357 \u56577 </span> 25. Linux Auto-Connect \'97 systemd, udev, Vendor ID</h2>\
+\
+<h3>Method 1: systemd Template Service (bind by bus ID)</h3>\
+<pre>\
+<span class="cm"># /etc/systemd/system/usbip-bind@.service</span>\
+[Unit]\
+Description=USB-IP Binding on bus id %I\
+After=network-online.target usbipd.service\
+Wants=network-online.target\
+Requires=usbipd.service\
+\
+[Service]\
+Type=simple\
+ExecStart=/usr/bin/usbip bind -b %i\
+RemainAfterExit=yes\
+ExecStop=/usr/bin/usbip unbind -b %i\
+Restart=on-failure\
+\
+[Install]\
+WantedBy=multi-user.target\
+\
+<span class="cm"># Enable for device at bus ID 1-1.5:</span>\
+systemctl enable --now usbip-bind@1-1.5.service\
+</pre>\
+\
+<h3>Method 2: Bind by Vendor:Product ID (more stable \'97 bus IDs can change)</h3>\
+<p>If bus IDs are inconsistent and dynamically assigned at each system boot, binding by vendor/device ID can be used alternatively. The usbip-systemd AUR package supports config files in <code>/etc/usbip/bind-devices/</code>:</p>\
+\
+<pre>\
+<span class="cm"># /etc/systemd/system/usbip-bind-id@.service</span>\
+[Unit]\
+Description=USB-IP Binding device id %I\
+After=network-online.target usbipd.service\
+Wants=network-online.target\
+Requires=usbipd.service\
+\
+[Service]\
+Type=simple\
+ExecStart=/bin/sh -c "/usr/sbin/usbip bind \\\
+  --$(/usr/sbin/usbip list -p -l | grep '#usbid=%i#' | cut '-d#' -f1)"\
+RemainAfterExit=yes\
+ExecStop=/bin/sh -c "/usr/sbin/usbip unbind \\\
+  --$(/usr/sbin/usbip list -p -l | grep '#usbid=%i#' | cut '-d#' -f1)"\
+Restart=on-failure\
+\
+[Install]\
+WantedBy=multi-user.target\
+\
+<span class="cm"># Enable for Logitech Unifying Receiver (046d:c52b):</span>\
+systemctl enable --now usbip-bind-id@046d:c52b.service\
+</pre>\
+\
+<h3>Method 3: Client Auto-Attach via systemd</h3>\
+<pre>\
+<span class="cm"># /etc/systemd/system/usbip-attach@.service</span>\
+[Unit]\
+Description=USB-IP Client Attach %I\
+After=network-online.target\
+Wants=network-online.target\
+\
+[Service]\
+Type=oneshot\
+<span class="cm"># Format: server_ip/bus_id</span>\
+ExecStart=/usr/bin/usbip attach \\\
+  -r %I \\\
+  -b $(/usr/bin/usbip list -p -r %I | grep '#usbid=046d:c52b#' | cut '-d#' -f1)\
+RemainAfterExit=yes\
+\
+[Install]\
+WantedBy=multi-user.target\
+\
+systemctl enable --now usbip-attach@192.168.1.100.service\
+</pre>\
+\
+<h3>Method 4: udev Rules for Server-Side Hotplug Auto-Bind</h3>\
+<pre>\
+<span class="cm"># /etc/udev/rules.d/90-usbip-autobind.rules</span>\
+<span class="cm"># Auto-bind Logitech Unifying Receiver when plugged in</span>\
+ACTION=="add", SUBSYSTEM=="usb", \\\
+  ATTRS\{idVendor\}=="046d", ATTRS\{idProduct\}=="c52b", \\\
+  RUN+="/usr/bin/usbip bind -b $attr\{busnum\}-$attr\{devpath\}"\
+\
+<span class="cm"># Auto-unbind on removal</span>\
+ACTION=="remove", SUBSYSTEM=="usb", \\\
+  ATTRS\{idVendor\}=="046d", ATTRS\{idProduct\}=="c52b", \\\
+  RUN+="/usr/bin/usbip unbind -b $attr\{busnum\}-$attr\{devpath\}"\
+</pre>\
+\
+<h3>Method 5: usbip-systemd (AUR) \'97 Simplest Config-Based Approach</h3>\
+<p>usbip-systemdAUR provides systemd service files for binding by vendor/device id and for connecting by hostname and vendor/device id. For each device create a <code>device.conf</code> in <code>/etc/usbip/bind-devices/</code> with <code>USBIP_DEVICE</code> set to the vendor/product id. For each host/device create a <code>device.conf</code> in <code>/etc/usbip/remote-devices/</code> with <code>HOST</code> set and <code>USBIP_DEVICE</code> set to the vendor/product id.</p>\
+\
+<h2 id="auto-windows"><span class="ico">\uc0\u55357 \u56577 </span> 26. Windows Auto-Connect \'97 usbipd-win, Task Scheduler, wsl-usb-manager</h2>\
+\
+<h3>usbipd-win --auto-attach (simplest)</h3>\
+<pre>\
+<span class="cm"># Bind the device (persistent, survives reboots):</span>\
+usbipd bind --busid 1-1\
+\
+<span class="cm"># Attach to WSL with auto-reattach on unplug:</span>\
+usbipd attach --wsl --busid 1-1 --auto-attach\
+\
+<span class="cm"># Attach to a specific WSL distribution:</span>\
+usbipd attach --wsl Ubuntu-22.04 --busid 1-1 --auto-attach\
+</pre>\
+\
+<div class="warn-box">\
+  <strong>Caveat:</strong> <code>--auto-attach</code> re-attaches after device unplug/replug but does <strong>not</strong> survive a full Windows reboot. Use Task Scheduler or wsl-usb-manager profiles for boot persistence.\
+</div>\
+\
+<h3>Task Scheduler for Boot Persistence</h3>\
+<pre>\
+<span class="cm"># PowerShell \'97 create scheduled task that runs at system startup</span>\
+$action = New-ScheduledTaskAction `\
+  -Execute "usbipd" `\
+  -Argument "attach --wsl --busid 1-1"\
+$trigger = New-ScheduledTaskTrigger -AtStartup\
+$principal = New-ScheduledTaskPrincipal `\
+  -UserId "SYSTEM" `\
+  -LogonType ServiceAccount `\
+  -RunLevel Highest\
+$settings = New-ScheduledTaskSettingsSet `\
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 5)\
+Register-ScheduledTask `\
+  -TaskName "USB-IP Auto-Attach WSL" `\
+  -Action $action `\
+  -Trigger $trigger `\
+  -Principal $principal `\
+  -Settings $settings\
+</pre>\
+\
+<h3>nickbeth/wsl-usb-manager \'97 GUI Profiles (Easiest)</h3>\
+<p>Open wsl-usb-manager \uc0\u8594  select device \u8594  click "Persist" or "Auto-attach" \u8594  device re-attaches after every unplug and every boot automatically. No scripting required.</p>\
+\
+<h2 id="auto-hotplug"><span class="ico">\uc0\u55357 \u56588 </span> 27. Hotplug \'97 Reconnect After Unplug Without Manual Steps</h2>\
+\
+<p>The USBip project implements hot plugging for USB devices over TCP/IP on Linux. It creates a systemctl service on both the client and the server that binds all available devices. When a device that is bound and attached remotely is unplugged, the device is automatically detached on the client and unbound on the host. After that the state is the same as if it was never bound or attached.</p>\
+\
+<p>For per-device hotplug on the server side, combine udev rules (Section 25, Method 4) with systemd services. On the client side, write a script that polls and re-attaches:</p>\
+\
+<pre>\
+<span class="cm">#!/bin/bash</span>\
+<span class="cm"># /usr/local/bin/usbip-watchdog.sh</span>\
+<span class="cm"># Continuously monitor and re-attach a device</span>\
+\
+SERVER="192.168.1.100"\
+VENDOR_ID="046d:c52b"\
+\
+while true; do\
+  if ! usbip port | grep -q "$VENDOR_ID"; then\
+    echo "Device not attached, attempting to attach..."\
+    BUS_ID=$(usbip list -p -r $SERVER | grep "#usbid=$VENDOR_ID#" \\\
+      | cut '-d#' -f1 | sed 's/busid=//')\
+    if [ -n "$BUS_ID" ]; then\
+      sudo usbip attach -r $SERVER -b "$BUS_ID"\
+    fi\
+  fi\
+  sleep 5\
+done\
+</pre>\
+\
+<!-- ========== PLATFORM GUIDES ========== -->\
+<h2 id="guide-linux"><span class="ico">\uc0\u55357 \u56359 </span> 28. Full Linux Setup Guide (Server + Client)</h2>\
+\
+<h3>Server Setup</h3>\
+<pre>\
+<span class="cm"># 1. Install usbip tools (Debian/Ubuntu)</span>\
+sudo apt install usbip linux-tools-generic\
+\
+<span class="cm"># 2. Load kernel modules</span>\
+sudo modprobe usbip_core\
+sudo modprobe usbip_host\
+\
+<span class="cm"># 3. Make modules persistent</span>\
+echo "usbip_core" | sudo tee -a /etc/modules\
+echo "usbip_host" | sudo tee -a /etc/modules\
+\
+<span class="cm"># 4. Start the daemon</span>\
+sudo usbipd -D\
+\
+<span class="cm"># Or as a systemd service:</span>\
+sudo systemctl enable --now usbipd.service\
+\
+<span class="cm"># 5. List local devices</span>\
+sudo usbip list -l\
+\
+<span class="cm"># 6. Bind a device (replace 1-1.5 with your bus ID)</span>\
+sudo usbip bind -b 1-1.5\
+\
+<span class="cm"># 7. Verify it's exported</span>\
+sudo usbip list -r 127.0.0.1\
+</pre>\
+\
+<h3>Client Setup</h3>\
+<pre>\
+<span class="cm"># 1. Install usbip tools</span>\
+sudo apt install usbip\
+\
+<span class="cm"># 2. Load VHCI driver</span>\
+sudo modprobe vhci-hcd\
+\
+<span class="cm"># Make persistent:</span>\
+echo "vhci-hcd" | sudo tee -a /etc/modules\
+\
+<span class="cm"># 3. List devices on remote server</span>\
+sudo usbip list -r 192.168.1.100\
+\
+<span class="cm"># 4. Attach the device</span>\
+sudo usbip attach -r 192.168.1.100 -b 1-1.5\
+\
+<span class="cm"># 5. Verify attachment</span>\
+usbip port\
+lsusb\
+\
+<span class="cm"># 6. Detach when done</span>\
+sudo usbip detach -p 0\
+</pre>\
+\
+<h2 id="guide-windows"><span class="ico">\uc0\u55358 \u56991 </span> 29. Full Windows + WSL Setup Guide</h2>\
+\
+<pre>\
+<span class="cm"># Step 1: Install usbipd-win (requires Windows 10 2004+)</span>\
+winget install --interactive --exact dorsel.usbipd-win\
+\
+<span class="cm"># Step 2: Update WSL kernel (important for device driver support)</span>\
+wsl --update\
+\
+<span class="cm"># Step 3: List USB devices (run PowerShell as Admin)</span>\
+usbipd list\
+\
+<span class="cm"># Step 4: Bind the device you want to share</span>\
+usbipd bind --busid 1-1\
+<span class="cm"># Note: binding is persistent across reboots</span>\
+\
+<span class="cm"># Step 5: Attach to WSL</span>\
+usbipd attach --wsl --busid 1-1\
+\
+<span class="cm"># Step 6: In WSL, verify the device appears</span>\
+lsusb\
+ls /dev/ttyUSB* /dev/ttyACM* /dev/sd*\
+\
+<span class="cm"># Step 7: When done, detach</span>\
+usbipd detach --busid 1-1\
+</pre>\
+\
+<h2 id="guide-pi"><span class="ico">\uc0\u55356 \u57171 </span> 30. Raspberry Pi as USB/IP Server</h2>\
+\
+<p>The Raspberry Pi is an extremely popular USB/IP server platform \'97 it's low-power, inexpensive, always-on, and has multiple USB ports. Pair it with a USB hub and you have a dedicated multi-device USB sharing appliance for under $50.</p>\
+\
+<pre>\
+<span class="cm"># Raspberry Pi OS (Debian-based) \'97 full setup</span>\
+sudo apt update && sudo apt install usbip\
+\
+<span class="cm"># The Pi kernel already includes usbip modules</span>\
+sudo modprobe usbip_core usbip_host\
+\
+<span class="cm"># Make persistent</span>\
+echo -e "usbip_core\\nusbip_host" | sudo tee -a /etc/modules\
+\
+<span class="cm"># Start daemon and enable at boot</span>\
+sudo systemctl enable --now usbipd.service\
+\
+<span class="cm"># Bind all USB devices at once (useful for a Pi USB hub):</span>\
+for busid in $(usbip list -l | grep 'busid' | awk '\{print $3\}'); do\
+  sudo usbip bind -b $busid 2>/dev/null\
+done\
+</pre>\
+\
+<div class="card ca">\
+  <h4>Raspberry Pi USB/IP Hardware Setup Tips</h4>\
+  <ul>\
+    <li>Use a <strong>powered USB hub</strong> \'97 Pi's USB port power is limited; powered hubs prevent device drop-outs</li>\
+    <li>Use <strong>Gigabit Ethernet</strong> (Pi 4+ has true GbE) \'97 avoids WiFi jitter</li>\
+    <li>Set a <strong>static IP</strong> for the Pi so clients always connect to the same address</li>\
+    <li>Disable WiFi if using Ethernet: <code>sudo rfkill block wifi</code></li>\
+    <li>Use a <strong>good power supply</strong> (5V/3A minimum for Pi 4) \'97 USB device power draw can cause instability on undersized supplies</li>\
+    <li>Consider adding a small SSD as a boot drive instead of SD card for reliability</li>\
+  </ul>\
+</div>\
+\
+<h2 id="guide-openwrt"><span class="ico">\uc0\u55357 \u56545 </span> 31. OpenWrt Router as USB/IP Server</h2>\
+\
+<p>OpenWrt can be configured as a USB over IP server, allowing you to access USB devices connected to your router from any computer on your network \'97 connecting storage drives, printers, and other USB peripherals without needing to plug them directly into your machine.</p>\
+\
+<pre>\
+<span class="cm"># Install USB/IP packages on OpenWrt</span>\
+opkg update\
+opkg install usbip usbip-client usbip-server kmod-usbip kmod-usbip-host\
+\
+<span class="cm"># Load modules</span>\
+modprobe usbip_core\
+modprobe usbip_host\
+\
+<span class="cm"># Start server</span>\
+usbipd -D\
+\
+<span class="cm"># List and bind devices</span>\
+usbip list -l\
+usbip bind -b 1-1\
+\
+<span class="cm"># Make persistent via /etc/rc.local or a startup script</span>\
+</pre>\
+\
+<div class="warn-box">\
+  <strong>OpenWrt Limitations:</strong> Not all OpenWrt-compatible routers have USB ports. Check your router's hardware spec. USB 2.0 is common; USB 3.0 is less so. CPU performance on routers is much lower than a Pi \'97 avoid high-bandwidth devices (video, audio). Best for: USB storage, USB-to-serial adapters, USB printers on the network.\
+</div>\
+\
+<h2 id="guide-proxmox"><span class="ico">\uc0\u55357 \u56741 \u65039 </span> 32. Proxmox: USB Passthrough to VMs and LXC Containers</h2>\
+\
+<h3>Option A: USB/IP Client Inside a VM (via QEMU)</h3>\
+<p>QEMU can act as a USB/IP client natively, connecting to any USB/IP server and presenting the device inside the VM. Oracle VM VirtualBox supports passing through USB devices which are exposed over the network using the USB over IP protocol without the need to configure the client side provided by the kernel and usbip tools. Furthermore, this feature works with VirtualBox running on any supported host, rather than just Linux alone. To enable support: <code>VBoxManage usbdevsource add unique-name --backend USB-IP --address device-server[:port]</code>. USB devices exported on the device server are then accessible through the GUI or VBoxManage like any USB devices attached locally.</p>\
+\
+<pre>\
+<span class="cm"># QEMU command-line: add USB/IP device from remote server</span>\
+-device usb-host,hostbus=1,hostaddr=2 \\\
+-usb \\\
+-device nec-usb-xhci,id=xhci\
+<span class="cm"># Or via qemu-system USB passthrough:</span>\
+qemu-system-x86_64 \\\
+  -device usb-host,id=usb0,vendorid=0x046d,productid=0xc52b\
+</pre>\
+\
+<h3>Option B: Direct LXC USB Device Passthrough (simpler for static devices)</h3>\
+<p>For devices physically attached to the Proxmox host, the direct LXC bind-mount approach is simpler than USB/IP:</p>\
+\
+<pre>\
+<span class="cm"># Find your device's major:minor numbers</span>\
+lsusb\
+ls -l /dev/bus/usb/004/005\
+<span class="cm"># e.g., shows: crw-rw-r-- 1 root root 189, 388 ...</span>\
+\
+<span class="cm"># Edit LXC config: /etc/pve/lxc/&lt;CTID&gt;.conf</span>\
+<span class="cm"># Add (Proxmox 8.1+ \'97 preferred method):</span>\
+pct set &lt;CTID&gt; --dev0 /dev/bus/usb/004/005\
+\
+<span class="cm"># OR manually add to .conf:</span>\
+lxc.cgroup2.devices.allow: c 189:388 rwm\
+lxc.mount.entry: /dev/bus/usb/004/005 dev/bus/usb/004/005 none bind,optional,create=file\
+\
+<span class="cm"># For serial devices (ttyACM0):</span>\
+lxc.cgroup2.devices.allow: c 166:* rwm\
+lxc.mount.entry: /dev/ttyACM0 dev/ttyACM0 none bind,optional,create=file\
+</pre>\
+\
+<div class="warn-box">\
+  <strong>Bus ID instability:</strong> The bus ID in <code>/dev/bus/usb/X/Y</code> changes when devices are plugged/unplugged or on reboot. Use a udev rule to ensure stable device paths, using <code>pct set</code> as the official way to change the LXC configuration \'97 this handles cluster setups correctly and will restart the container if needed.\
+</div>\
+\
+<h2 id="guide-docker"><span class="ico">\uc0\u55357 \u56331 </span> 33. Docker and Container USB Passthrough</h2>\
+\
+<pre>\
+<span class="cm"># Method 1: Pass entire USB bus (broad access)</span>\
+docker run --privileged \\\
+  -v /dev/bus/usb:/dev/bus/usb \\\
+  my-container\
+\
+<span class="cm"># Method 2: Pass specific device (safer)</span>\
+docker run \\\
+  --device /dev/bus/usb/001/003:/dev/bus/usb/001/003 \\\
+  my-container\
+\
+<span class="cm"># Method 3: Pass serial device</span>\
+docker run \\\
+  --device /dev/ttyUSB0:/dev/ttyUSB0 \\\
+  --group-add dialout \\\
+  my-container\
+\
+<span class="cm"># Method 4: udev rule to create a stable symlink for Docker</span>\
+<span class="cm"># /etc/udev/rules.d/99-mydevice.rules:</span>\
+SUBSYSTEM=="usb", ATTRS\{idVendor\}=="046d", ATTRS\{idProduct\}=="c52b", \\\
+  SYMLINK+="my-device", MODE="0666"\
+\
+<span class="cm"># Then use the symlink in Docker:</span>\
+docker run --device /dev/my-device:/dev/my-device my-container\
+</pre>\
+\
+<h2 id="guide-qemu"><span class="ico">\uc0\u9889 </span> 34. QEMU/KVM and VirtualBox USB/IP Client</h2>\
+\
+<h3>QEMU Native USB/IP Client</h3>\
+<pre>\
+<span class="cm"># Add a USB/IP device to a QEMU VM</span>\
+<span class="cm"># In the QEMU command line or via virsh XML:</span>\
+\
+<span class="cm"># List available devices on remote server (from host):</span>\
+usbip list -r 192.168.1.100\
+\
+<span class="cm"># virsh XML snippet for USB/IP passthrough:</span>\
+&lt;hostdev mode='subsystem' type='usb'&gt;\
+  &lt;source&gt;\
+    &lt;address type='usb-serial' bus='1' device='3'/&gt;\
+  &lt;/source&gt;\
+&lt;/hostdev&gt;\
+</pre>\
+\
+<h3>VirtualBox Native USB/IP</h3>\
+<p>To enable USB/IP passthrough in VirtualBox, use: <code>VBoxManage usbdevsource add unique-name --backend USB-IP --address device-server[:port]</code>. This can be used multiple times to access different device servers. USB devices exported on the device server are then accessible through the VirtualBox GUI or VBoxManage, like any USB devices attached locally.</p>\
+\
+<h2 id="guide-macos"><span class="ico">\uc0\u55356 \u57166 </span> 35. macOS \'97 The Platform USB/IP Forgot</h2>\
+\
+<div class="danger-box">\
+  <strong>macOS has no official USB/IP support.</strong> There is no Apple-provided or community-maintained stable USB/IP client or server for macOS. The original project acknowledged this gap but never filled it.\
+</div>\
+\
+<p>Options available as of 2026:</p>\
+<ul>\
+  <li><strong>VirtualHere</strong> \'97 commercial tool; macOS client and server both work well; best option for macOS USB/IP equivalence</li>\
+  <li><strong>FlexiHub</strong> \'97 commercial; full macOS support; uses its own protocol</li>\
+  <li><strong>USB Network Gate</strong> \'97 commercial; macOS client available</li>\
+  <li><strong>VirtualBox on macOS</strong> \'97 can use VirtualBox's built-in USB/IP client to connect to Linux servers; runs inside the VM, not native macOS</li>\
+  <li><strong>Experimental usbip-macOS forks</strong> \'97 exist on GitHub but untested/unmaintained; not recommended for production</li>\
+</ul>\
+\
+<!-- ========== FULL ECOSYSTEM ========== -->\
+<h2 id="oss-tools"><span class="ico">\uc0\u55357 \u56550 </span> 36. Open-Source Tools \'97 Complete Annotated List</h2>\
+\
+<table>\
+  <tr><th>#</th><th>Tool</th><th>Role</th><th>S</th><th>C</th><th>GUI</th><th>OS</th><th>Auto</th><th>Notes</th></tr>\
+  <tr><td>1</td><td><strong>Linux kernel usbip</strong></td><td><span class="tag tb">Core</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Linux</td><td>systemd</td><td>In kernel since 3.17; gold standard; modules: usbip_host + vhci-hcd</td></tr>\
+  <tr><td>2</td><td><strong>dorssel/usbipd-win</strong></td><td><span class="tag tb">Core</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Windows</td><td>\u10003 </td><td>Microsoft-backed; installs as Windows service; signed; foundational Windows tool</td></tr>\
+  <tr><td>3</td><td><strong>vadimgrn/usbip-win2</strong></td><td><span class="tag tq">Driver</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>Partial</td><td>Windows</td><td>\u10007 </td><td>EV-signed VHCI driver; zero-copy; modern Windows USB/IP client</td></tr>\
+  <tr><td>4</td><td><strong>cezanne/usbip-win</strong></td><td><span class="tag tr">Deprecated</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Windows</td><td>\u10007 </td><td>Original Windows port; unsigned drivers; do not use on Win 10/11</td></tr>\
+  <tr><td>5</td><td><strong>nickbeth/wsl-usb-manager</strong></td><td><span class="tag tp">GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Win</td><td>\u10003 </td><td>Rust; &lt;3MB RAM; tray; auto-attach profiles; connects WSL/Linux/Windows</td></tr>\
+  <tr><td>6</td><td><strong>featherbear/wsl-usb-gui</strong></td><td><span class="tag tp">GUI</span></td><td>\uc0\u10007 </td><td>WSL</td><td>\u10003 </td><td>Win\u8594 WSL</td><td>\u10007 </td><td>WSL-only; superseded by wsl-usb-manager</td></tr>\
+  <tr><td>7</td><td><strong>K-Francis-H/usbip-gui</strong></td><td><span class="tag tp">GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10007 </td><td>Python/Tkinter GUI for Linux usbip CLI; basic but functional</td></tr>\
+  <tr><td>8</td><td><strong>seastwood/usb-audio-ip-client</strong></td><td><span class="tag ty">Niche</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10007 </td><td>USB/IP + PipeWire for audio+gamepad; Steam Deck / Linux gaming</td></tr>\
+  <tr><td>9</td><td><strong>alunux/usbip-service-discovery</strong></td><td><span class="tag tp">GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10007 </td><td>Auto-discover USB/IP servers on local network; GTK GUI</td></tr>\
+  <tr><td>10</td><td><strong>cryptedx/ha-usbip-client</strong></td><td><span class="tag ty">Addon</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Home Asst.</td><td>\u10003 </td><td>Home Assistant add-on; auto-connects to USB/IP server at boot; great for Zigbee/Z-Wave dongle sharing</td></tr>\
+  <tr><td>11</td><td><strong>usbip-systemd (AUR)</strong></td><td><span class="tag tb">Helper</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Linux (Arch)</td><td>\u10003 </td><td>Config-file-driven systemd services; bind/connect by Vendor:Product ID</td></tr>\
+  <tr><td>12</td><td><strong>VirtualBox USB/IP client</strong></td><td><span class="tag tb">Built-in</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>Via cfg</td><td>Native USB/IP client in VirtualBox; cross-platform; VBoxManage CLI</td></tr>\
+  <tr><td>13</td><td><strong>QEMU USB/IP passthrough</strong></td><td><span class="tag tb">Built-in</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>Via GUI</td><td>Linux/Win</td><td>Via XML</td><td>QEMU natively supports USB/IP client; virsh XML configuration</td></tr>\
+  <tr><td>14</td><td><strong>Renode USB/IP server</strong></td><td><span class="tag ty">Emulator</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>All</td><td>\u10007 </td><td>Renode provides a built-in USB/IP server that exports virtual USB devices to the external world; exported devices can be attached to the host machine like real hardware.</td></tr>\
+  <tr><td>15</td><td><strong>CherryUSB</strong></td><td><span class="tag tb">Embedded</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>MCU</td><td>\u10003 </td><td>USB stack for ESP32/STM32/etc.; implements USB/IP protocol on embedded hardware</td></tr>\
+  <tr><td>16</td><td><strong>usbip-win MFC GUI</strong></td><td><span class="tag tp">GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Windows</td><td>\u10007 </td><td>Old MFC-based Windows GUI for usbip-win; largely obsolete</td></tr>\
+  <tr><td>17</td><td><strong>USBIPManager</strong></td><td><span class="tag tp">GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Linux/Win</td><td>\u10007 </td><td>Cross-platform manager; listed in usbip/implementations index</td></tr>\
+  <tr><td>18</td><td><strong>lan-mouse</strong></td><td><span class="tag tz">KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Lin/Mac</td><td>\u10003 </td><td>Rust; modern Deskflow alternative; GTK4; Wayland native</td></tr>\
+  <tr><td>19</td><td><strong>Input Leap</strong></td><td><span class="tag tz">KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>Active Barrier fork; TLS; Wayland improving</td></tr>\
+  <tr><td>20</td><td><strong>Barrier</strong></td><td><span class="tag tz">KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>Original Synergy 1 fork; widely deployed; development slowed</td></tr>\
+  <tr><td>21</td><td><strong>socat</strong></td><td><span class="tag tb">Utility</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Linux/Mac</td><td>Via script</td><td>Map any serial/USB-serial device over TCP; raw but powerful</td></tr>\
+  <tr><td>22</td><td><strong>ser2net</strong></td><td><span class="tag tb">Serial</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Linux</td><td>systemd</td><td>Share serial ports (COM/TTY) over TCP/IP; config file driven</td></tr>\
+  <tr><td>23</td><td><strong>comport-forwarder</strong></td><td><span class="tag tb">Serial</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Windows</td><td>\u10007 </td><td>Windows-native serial port over TCP; simpler than USB/IP for serial-only</td></tr>\
+  <tr><td>24</td><td><strong>SPICE USB Redirection</strong></td><td><span class="tag tb">VM-native</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Linux/Win</td><td>\u10003 </td><td>Red Hat; built into KVM/oVirt/OpenStack; pass USB from client to VM; open protocol</td></tr>\
+  <tr><td>25</td><td><strong>RDP USB Redirection</strong></td><td><span class="tag tb">Built-in</span></td><td>RDP srv</td><td>RDP cli</td><td>\uc0\u10003 </td><td>Windows</td><td>\u10003 </td><td>Built into Windows RDP; no extra software; redirects USB from thin client to remote session</td></tr>\
+  <tr><td>26</td><td><strong>Sunshine</strong></td><td><span class="tag ty">Video+Input</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Win/Linux/Mac</td><td>\u10003 </td><td>Open-source GameStream server; pairs with Moonlight; low-latency</td></tr>\
+  <tr><td>27</td><td><strong>Moonlight</strong></td><td><span class="tag ty">Video+Input</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>All + TV</td><td>\u10003 </td><td>GameStream client; controller passthrough; USB gamepad over network</td></tr>\
+  <tr><td>28</td><td><strong>GStreamer</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Partial</td><td>All</td><td>Via script</td><td>V4L2 capture \u8594  encode \u8594  RTP/RTSP; better than USB/IP for webcams</td></tr>\
+  <tr><td>29</td><td><strong>FFmpeg</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>All</td><td>Via script</td><td>Encode and stream webcam to any destination; the universal encoder</td></tr>\
+  <tr><td>30</td><td><strong>MediaMTX (rtsp-simple-server)</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>All</td><td>\u10003 </td><td>Single binary; RTSP/RTMP/HLS/WebRTC server; easy webcam sharing over LAN</td></tr>\
+  <tr><td>31</td><td><strong>Snapcast</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>systemd</td><td>Synchronized multi-room audio over network; client/server; better than USB audio over USB/IP</td></tr>\
+  <tr><td>32</td><td><strong>PipeWire network</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10003 </td><td>Native Linux audio over network; lower latency than PulseAudio TCP; replaces USB/IP for audio</td></tr>\
+  <tr><td>33</td><td><strong>PulseAudio TCP</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10003 </td><td>Built into PulseAudio; network audio sink/source; widely available</td></tr>\
+  <tr><td>34</td><td><strong>JackTrip</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10007 </td><td>Ultra-low latency audio over WAN for musicians; replaces USB audio for remote recording</td></tr>\
+  <tr><td>35</td><td><strong>RustDesk</strong></td><td><span class="tag to">Remote Desk</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>Best open-source TeamViewer alternative; self-hostable; fast</td></tr>\
+  <tr><td>36</td><td><strong>Guacamole (Apache)</strong></td><td><span class="tag to">Remote Desk</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>Browser</td><td>All</td><td>\u10003 </td><td>Clientless remote desktop gateway via browser; RDP/VNC/SSH</td></tr>\
+  <tr><td>37</td><td><strong>Remmina</strong></td><td><span class="tag to">Remote Desk</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10003 </td><td>Standard Linux remote desktop client; RDP/VNC/SPICE/NX</td></tr>\
+  <tr><td>38</td><td><strong>WireGuard</strong></td><td><span class="tag tg">VPN</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>Best VPN tunnel for USB/IP over WAN; in Linux kernel 5.6+; minimal overhead</td></tr>\
+  <tr><td>39</td><td><strong>OpenVPN</strong></td><td><span class="tag tg">VPN</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>Older VPN; higher overhead than WireGuard but very mature and flexible</td></tr>\
+  <tr><td>40</td><td><strong>Tailscale</strong></td><td><span class="tag tg">VPN</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>WireGuard-based mesh VPN; zero config; ideal for USB/IP over internet</td></tr>\
+  <tr><td>41</td><td><strong>v4l2loopback</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Linux</td><td>Via script</td><td>Virtual V4L2 webcam device; pipe any video source into it; use for webcam-over-network</td></tr>\
+  <tr><td>42</td><td><strong>Deskreen</strong></td><td><span class="tag to">Display</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10007 </td><td>Turn any browser-capable device into a second monitor over WiFi; Electron-based</td></tr>\
+  <tr><td>43</td><td><strong>Weylus</strong></td><td><span class="tag to">Display</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>Browser</td><td>Linux</td><td>\u10003 </td><td>Use tablet as drawing tablet / touchscreen for Linux; browser-based</td></tr>\
+  <tr><td>44</td><td><strong>UsbTreeView</strong></td><td><span class="tag tz">Diagnostic</span></td><td>\uc0\u10007 </td><td>\u10007 </td><td>\u10003 </td><td>Windows</td><td>\u10007 </td><td>Visualize USB hub tree; essential for debugging USB/IP device issues on Windows</td></tr>\
+  <tr><td>45</td><td><strong>USBPcap</strong></td><td><span class="tag tz">Diagnostic</span></td><td>\uc0\u10007 </td><td>\u10007 </td><td>\u10003 </td><td>Windows</td><td>\u10007 </td><td>Capture USB traffic on Windows; integrates with Wireshark for USB/IP debugging</td></tr>\
+  <tr><td>46</td><td><strong>usbmon (Linux)</strong></td><td><span class="tag tz">Diagnostic</span></td><td>\uc0\u10007 </td><td>\u10007 </td><td>Via Wireshark</td><td>Linux</td><td>\u10007 </td><td>Kernel USB traffic capture; use with Wireshark to debug USB/IP URBs</td></tr>\
+  <tr><td>47</td><td><strong>scrcpy</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10007 </td><td>Mirror Android phone over USB/TCP; low latency; use phone camera as network webcam</td></tr>\
+  <tr><td>48</td><td><strong>AudioRelay</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Lin/And</td><td>\u10003 </td><td>Stream PC audio to phone/tablet; makes phone a wireless speaker; freemium</td></tr>\
+  <tr><td>49</td><td><strong>MeshCentral</strong></td><td><span class="tag to">Remote Desk</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Browser</td><td>All</td><td>\u10003 </td><td>Open-source web-based remote management; includes USB forwarding via Intel AMT</td></tr>\
+  <tr><td>50</td><td><strong>ser2net</strong></td><td><span class="tag tb">Serial</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Linux</td><td>systemd</td><td>Forward serial port (TTY) over TCP/telnet; simpler than USB/IP for serial-only needs</td></tr>\
+</table>\
+\
+<h2 id="hardware"><span class="ico">\uc0\u55357 \u56588 </span> 37. Hardware USB/IP Appliances</h2>\
+\
+<div class="sec-intro">\
+These are physical hardware devices that act as dedicated USB/IP (or proprietary USB-over-Ethernet) servers. They require no computer to be running \'97 plug in the box, plug in your USB devices, and they appear on the network. Different from software-only solutions.\
+</div>\
+\
+<table>\
+  <tr><th>Product</th><th>Ports</th><th>Protocol</th><th>Auto-connect</th><th>OS support</th><th>Notes</th></tr>\
+  <tr>\
+    <td><strong>Digi AnywhereUSB Plus</strong></td>\
+    <td>2, 8, 14, 24</td>\
+    <td>Proprietary</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Win/Linux/Mac/RPi</td>\
+    <td>Enterprise-grade USB-over-IP solution that integrates specialized hardware with supported drivers, ensuring enhanced reliability, security, and scalability. Unlike generic software-only solutions, designed for critical and large-scale deployments. Connect USB peripheral devices anywhere on a LAN via Ethernet or Wi-Fi without a locally-attached host computer. Expensive but the most reliable enterprise option. 24-port model has dual redundant power supplies.</td>\
+  </tr>\
+  <tr>\
+    <td><strong>SIIG USB 2.0 over IP</strong></td>\
+    <td>1\'964</td>\
+    <td>Proprietary</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Win/Mac</td>\
+    <td>Budget-friendly hardware USB server; Windows/Mac drivers included; no Linux client</td>\
+  </tr>\
+  <tr>\
+    <td><strong>Silex DS-510</strong></td>\
+    <td>4</td>\
+    <td>USB over LAN</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Win/Mac</td>\
+    <td>Japanese-made; reliable; USB 2.0; popular for printer sharing</td>\
+  </tr>\
+  <tr>\
+    <td><strong>StarTech USB over IP Hub</strong></td>\
+    <td>1, 4</td>\
+    <td>Proprietary</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Win/Mac</td>\
+    <td>Plug-and-play USB device server; good for SMB use</td>\
+  </tr>\
+  <tr>\
+    <td><strong>Raspberry Pi (DIY)</strong></td>\
+    <td>4+ (with hub)</td>\
+    <td>USB/IP</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Linux/Win/VirtualBox</td>\
+    <td>~$50 total cost; runs Linux usbip stack; fully open-source; best DIY option</td>\
+  </tr>\
+  <tr>\
+    <td><strong>GL.iNet Routers (MT300N, AXT1800)</strong></td>\
+    <td>1\'962</td>\
+    <td>USB/IP (OpenWrt)</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Linux</td>\
+    <td>OpenWrt-based pocket routers; USB/IP via opkg packages; convenient travel device</td>\
+  </tr>\
+  <tr>\
+    <td><strong>NAS Devices (Synology, QNAP)</strong></td>\
+    <td>1\'964</td>\
+    <td>USB/IP or proprietary</td>\
+    <td><span class="chk">\uc0\u10003 </span></td>\
+    <td>Win/Mac/Linux</td>\
+    <td>Many NAS devices run Linux internally and can be configured as USB/IP servers; some have official USB-over-IP packages</td>\
+  </tr>\
+</table>\
+\
+<h2 id="commercial"><span class="ico">\uc0\u55357 \u56508 </span> 38. Commercial Software \'97 Full Comparison</h2>\
+\
+<table>\
+  <tr><th>Tool</th><th>S</th><th>C</th><th>OS</th><th>Protocol</th><th>Auto</th><th>Encryption</th><th>Price</th><th>Best for</th></tr>\
+  <tr><td><strong>VirtualHere</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux/And/RPi</td><td>Proprietary</td><td>\u10003 </td><td>\u10003 </td><td>$49/server (1 device free)</td><td>Best overall reliability; better isochronous handling; used in Steam Link</td></tr>\
+  <tr><td><strong>FlexiHub</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux/Android</td><td>Proprietary</td><td>\u10003 </td><td>\u10003  (TLS)</td><td>Subscription ~$14\'9650/mo</td><td>Enterprise; team management; NAT traversal; COM port support</td></tr>\
+  <tr><td><strong>USB Network Gate (Eltima)</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>Proprietary</td><td>\u10003 </td><td>\u10003  (SSL)</td><td>~$40/connection</td><td>RDP integration; enterprise support; mature product</td></tr>\
+  <tr><td><strong>USB Redirector</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Win/Linux/OpenWrt</td><td>Proprietary</td><td>\u10003 </td><td>\u10003 </td><td>~$30\'9650/device</td><td>OpenWrt/NAS support; good for router-based USB sharing</td></tr>\
+  <tr><td><strong>Donglify</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Win/Mac</td><td>Proprietary</td><td>\u10003 </td><td>\u10003 </td><td>Subscription ~$6/mo</td><td>License dongles only; unique multi-user simultaneous dongle sharing</td></tr>\
+  <tr><td><strong>NoMachine</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux/RPi/Android</td><td>NX</td><td>\u10003 </td><td>\u10003 </td><td>Free (personal) / Subscription</td><td>Full remote desktop + USB passthrough + low latency</td></tr>\
+  <tr><td><strong>AnyDesk</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>All</td><td>AnyDesk DeskRT</td><td>\u10003 </td><td>\u10003 </td><td>Free (personal) / ~$15/mo pro</td><td>Remote desktop with USB support; good cross-platform</td></tr>\
+  <tr><td><strong>TeamViewer</strong></td><td>\uc0\u10003 </td><td>\u10003 </td><td>All</td><td>Proprietary</td><td>\u10003 </td><td>\u10003 </td><td>Free (personal) / Expensive enterprise</td><td>Enterprise remote support; USB forwarding in full version</td></tr>\
+  <tr><td><strong>Citrix USB Redir.</strong></td><td>Citrix srv</td><td>Citrix RX</td><td>Win/Mac/Linux</td><td>ICA/HDX</td><td>\uc0\u10003 </td><td>\u10003 </td><td>Enterprise licensing</td><td>VDI environments; passes arbitrary USB to virtual desktops</td></tr>\
+  <tr><td><strong>VMware USB Passthrough</strong></td><td>ESXi</td><td>vSphere/Workstation</td><td>All</td><td>VMware</td><td>\uc0\u10003 </td><td>\u10003 </td><td>VMware license</td><td>Enterprise virtualization; direct USB passthrough to VMs</td></tr>\
+</table>\
+\
+<h2 id="software-kvm"><span class="ico">\uc0\u9000 \u65039 </span> 39. Software KVM Tools \'97 The Adjacent Ecosystem</h2>\
+\
+<table>\
+  <tr><th>Tool</th><th>Protocol</th><th>OS</th><th>Free</th><th>Wayland</th><th>Notes</th></tr>\
+  <tr><td><strong>Deskflow</strong></td><td>Synergy-compatible</td><td>Win/Mac/Linux</td><td>\uc0\u10003 </td><td>\u10003 </td><td>Active successor to Synergy+Barrier; TLS; best overall</td></tr>\
+  <tr><td><strong>Lan Mouse</strong></td><td>Custom (Rust)</td><td>Win/Lin/Mac</td><td>\uc0\u10003 </td><td>\u10003 </td><td>Modern, Rust-based, GTK4 UI; growing community</td></tr>\
+  <tr><td><strong>Input Leap</strong></td><td>Synergy-compatible</td><td>Win/Mac/Linux</td><td>\uc0\u10003 </td><td>Improving</td><td>Active Barrier fork; TLS fixed; good stability</td></tr>\
+  <tr><td><strong>Barrier</strong></td><td>Synergy-compatible</td><td>Win/Mac/Linux</td><td>\uc0\u10003 </td><td>Partial</td><td>Original open-source Synergy fork; still widely used; development slower</td></tr>\
+  <tr><td><strong>Mouse Without Borders</strong></td><td>Microsoft proprietary</td><td>Windows only</td><td>\uc0\u10003 </td><td>N/A</td><td>Built into Windows PowerToys; simple; Windows-only</td></tr>\
+  <tr><td><strong>ShareMouse</strong></td><td>Proprietary</td><td>Win/Mac</td><td>Freemium</td><td>N/A</td><td>Commercial; drag-and-drop file sharing between monitors</td></tr>\
+  <tr><td><strong>Synergy 3</strong></td><td>Proprietary (commercial)</td><td>Win/Mac/Linux</td><td>Paid</td><td>\uc0\u10003 </td><td>Commercial successor to the original Synergy project</td></tr>\
+  <tr><td><strong>x2vnc / Win2VNC</strong></td><td>VNC</td><td>Linux/Windows</td><td>\uc0\u10003 </td><td>\u10007 </td><td>Old-school; link X11/Windows displays; mostly obsolete</td></tr>\
+  <tr><td><strong>Waynergy</strong></td><td>Synergy-compatible</td><td>Linux (Wayland)</td><td>\uc0\u10003 </td><td>Native</td><td>Synergy protocol client specifically for Wayland compositors</td></tr>\
+</table>\
+\
+<h2 id="audio-tools"><span class="ico">\uc0\u55356 \u57269 </span> 40. Audio-over-IP Tools \'97 The Better Alternative to USB Audio Over USB/IP</h2>\
+\
+<table>\
+  <tr><th>Tool</th><th>Latency</th><th>OS</th><th>Free</th><th>Auto</th><th>Notes</th></tr>\
+  <tr><td><strong>PipeWire network</strong></td><td>~5\'9650ms</td><td>Linux</td><td>\uc0\u10003 </td><td>\u10003 </td><td>Built into modern Linux; replaces PulseAudio; native network audio</td></tr>\
+  <tr><td><strong>PulseAudio TCP</strong></td><td>~50\'96200ms</td><td>Linux/Mac</td><td>\uc0\u10003 </td><td>\u10003 </td><td>module-native-protocol-tcp; works out of box on Linux</td></tr>\
+  <tr><td><strong>Snapcast</strong></td><td>~100\'96200ms</td><td>Win/Mac/Linux</td><td>\uc0\u10003 </td><td>systemd</td><td>Synchronized multi-room audio; client/server; very popular homelab tool</td></tr>\
+  <tr><td><strong>JackTrip</strong></td><td>&lt;10ms (WAN)</td><td>Win/Mac/Linux</td><td>\uc0\u10003 </td><td>\u10007 </td><td>Ultra-low latency; for musicians jamming remotely; requires JACK or ASIO</td></tr>\
+  <tr><td><strong>Sonobus</strong></td><td>&lt;20ms (WAN)</td><td>Win/Mac/Linux/iOS/And</td><td>\uc0\u10003 </td><td>\u10007 </td><td>Peer-to-peer audio; multiple channels; high quality; for live remote collaboration</td></tr>\
+  <tr><td><strong>VBAN (Voicemeeter)</strong></td><td>~5ms LAN</td><td>Windows</td><td>Free</td><td>\uc0\u10003 </td><td>Protocol for uncompressed audio over LAN; Voicemeeter Banana/Potato</td></tr>\
+  <tr><td><strong>NDI</strong></td><td>~1\'965 frames</td><td>Win/Mac/Linux</td><td>Free SDK</td><td>\uc0\u10003 </td><td>Broadcast standard for video+audio over LAN; used in professional AV</td></tr>\
+  <tr><td><strong>Dante (Audinate)</strong></td><td>&lt;1ms LAN</td><td>Win/Mac</td><td>Paid</td><td>\uc0\u10003 </td><td>Professional studio standard for multi-channel audio over Ethernet; expensive</td></tr>\
+  <tr><td><strong>AudioRelay</strong></td><td>~30\'96100ms</td><td>Win/Mac/Lin/Android</td><td>Freemium</td><td>\uc0\u10003 </td><td>Easy PC audio to phone/tablet; user friendly; no setup needed</td></tr>\
+</table>\
+\
+<h2 id="video-tools"><span class="ico">\uc0\u55357 \u56570 </span> 41. Video Streaming Tools \'97 Better Than USB/IP for Cameras</h2>\
+\
+<table>\
+  <tr><th>Tool</th><th>Protocol</th><th>OS</th><th>Free</th><th>Latency</th><th>Notes</th></tr>\
+  <tr><td><strong>GStreamer</strong></td><td>RTP/RTSP/HLS</td><td>All</td><td>\uc0\u10003 </td><td>~50\'96200ms</td><td>Most powerful pipeline tool; any codec; scriptable; V4L2 source</td></tr>\
+  <tr><td><strong>FFmpeg</strong></td><td>RTMP/SRT/HLS</td><td>All</td><td>\uc0\u10003 </td><td>~200ms</td><td>Capture + encode + stream in one command; universal tool</td></tr>\
+  <tr><td><strong>MediaMTX</strong></td><td>RTSP/RTMP/HLS/WebRTC/SRT</td><td>All</td><td>\uc0\u10003 </td><td>~100ms</td><td>Single binary; zero config; V4L2 source support; best easy self-hosted option</td></tr>\
+  <tr><td><strong>OBS Studio</strong></td><td>RTMP/SRT/HLS</td><td>Win/Mac/Linux</td><td>\uc0\u10003 </td><td>~200\'96500ms</td><td>Full streaming studio; complex but very capable</td></tr>\
+  <tr><td><strong>v4l2rtspserver</strong></td><td>RTSP</td><td>Linux</td><td>\uc0\u10003 </td><td>~100ms</td><td>Minimal; perfect for Raspberry Pi webcam RTSP server</td></tr>\
+  <tr><td><strong>Sunshine + Moonlight</strong></td><td>GameStream</td><td>Win/Linux+clients</td><td>\uc0\u10003 </td><td>~10\'9630ms</td><td>Extremely low latency; H.264/H.265 hardware encode; best for gaming/remote desktop</td></tr>\
+  <tr><td><strong>RustDesk</strong></td><td>Proprietary</td><td>All</td><td>\uc0\u10003 </td><td>~50\'96200ms</td><td>Full screen + input + clipboard; self-hostable relay server</td></tr>\
+  <tr><td><strong>Scrcpy</strong></td><td>USB/TCP</td><td>Android+PC</td><td>\uc0\u10003 </td><td>~35ms</td><td>Mirror Android; use phone camera as webcam via virtual camera</td></tr>\
+  <tr><td><strong>v4l2loopback + netcat</strong></td><td>Raw TCP</td><td>Linux</td><td>\uc0\u10003 </td><td>~50ms</td><td>Hacky but works: cat /dev/video0 | nc ... | cat &gt; /dev/video0</td></tr>\
+  <tr><td><strong>NDI Tools</strong></td><td>NDI</td><td>Win/Mac/Linux</td><td>Free SDK</td><td>~1\'965 frames</td><td>Professional broadcast standard; low-latency; auto-discovery on LAN</td></tr>\
+</table>\
+\
+<!-- ========== AWESOME LISTS ========== -->\
+<h2 id="awesome"><span class="ico">\uc0\u11088 </span> 42. Awesome-* Lists and Community Hubs</h2>\
+\
+<table>\
+  <tr><th>Repository</th><th>Relevant content for USB/IP context</th></tr>\
+  <tr><td><code>awesome-selfhosted/awesome-selfhosted</code></td><td>Self-hosted device management, remote access, NAS, VPN tools</td></tr>\
+  <tr><td><code>kahun/awesome-sysadmin</code></td><td>Virtualization, USB server hardware, remote consoles, serial-over-IP, KVM</td></tr>\
+  <tr><td><code>awesome-wsl</code> (multiple repos)</td><td>WSL tools including USB bridging, usbipd-win guides, development tools</td></tr>\
+  <tr><td><code>awesome-virtualization</code></td><td>KVM, QEMU, Proxmox, VirtualBox \'97 all include USB passthrough info</td></tr>\
+  <tr><td><code>awesome-homelab</code></td><td>Homelab USB/IP server setups (Pi, NAS, Proxmox)</td></tr>\
+  <tr><td><code>awesome-linux</code> (luong-komorebi)</td><td>Linux system tools including USB, device management, serial</td></tr>\
+  <tr><td><code>usbip/implementations</code> (SourceForge)</td><td>Official list of all known USB/IP implementations across all platforms</td></tr>\
+  <tr><td><code>awesome-raspberry-pi</code></td><td>Pi as USB/IP server; Pi as DIY USB hub; many community guides</td></tr>\
+  <tr><td><code>awesome-iot</code></td><td>IoT device management including USB forwarding, MQTT, edge devices</td></tr>\
+  <tr><td><code>awesome-embedded</code></td><td>Embedded USB stacks, CherryUSB, TinyUSB for USB/IP on microcontrollers</td></tr>\
+  <tr><td><code>awesome-proxmox</code></td><td>LXC USB passthrough, VM USB assignment, udev rules for containers</td></tr>\
+  <tr><td><code>awesome-docker</code></td><td>Container USB passthrough, device mounting, privileged mode alternatives</td></tr>\
+  <tr><td><code>awesome-openwrt</code></td><td>OpenWrt USB/IP packages, router-as-USB-server setups</td></tr>\
+  <tr><td><code>awesome-security</code></td><td>USB attack vectors, BadUSB, USB firewall tools</td></tr>\
+  <tr><td><code>sindresorhus/awesome</code></td><td>Master index of all awesome lists; hundreds of relevant sublists</td></tr>\
+  <tr><td><code>awesome-remote-work</code></td><td>Remote access tools including USB/dongle forwarding</td></tr>\
+  <tr><td><code>awesome-audio</code></td><td>Audio over network tools: JACK, PipeWire, Dante, NDI</td></tr>\
+  <tr><td><code>awesome-streaming</code></td><td>Video streaming tools: GStreamer, FFmpeg, OBS, NDI pipelines</td></tr>\
+  <tr><td><code>awesome-kvm</code></td><td>KVM/QEMU USB passthrough; IOMMU; VFIO; PCIe passthrough adjacent info</td></tr>\
+  <tr><td><code>awesome-windows</code></td><td>Windows USB tools, WSL tools, usbipd-win utilities</td></tr>\
+</table>\
+\
+<!-- ========== MASTER MATRIX ========== -->\
+<h2 id="matrix"><span class="ico">\uc0\u55357 \u56522 </span> 43. Master Matrix \'97 80+ Tools</h2>\
+\
+<table>\
+  <tr>\
+    <th>Tool</th><th>Category</th><th>Server</th><th>Client</th><th>Both</th><th>GUI</th><th>OS</th><th>Auto-connect</th><th>Free/Open</th><th>Protocol</th>\
+  </tr>\
+  <!-- CORE -->\
+  <tr><td><strong>Linux kernel usbip</strong></td><td><span class="tag tb">USB/IP Core</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Linux</td><td>systemd/udev</td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>dorssel/usbipd-win</strong></td><td><span class="tag tb">USB/IP Core</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>Windows</td><td>\u10003  (auto-attach)</td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>vadimgrn/usbip-win2</strong></td><td><span class="tag tq">USB/IP Driver</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>Partial</td><td>Windows</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>cezanne/usbip-win</strong></td><td><span class="tag tr">Deprecated</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Windows</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>nickbeth/wsl-usb-manager</strong></td><td><span class="tag tp">USB/IP GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Windows</td><td>\u10003  (profiles)</td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>featherbear/wsl-usb-gui</strong></td><td><span class="tag tp">USB/IP GUI</span></td><td>\uc0\u10007 </td><td>WSL</td><td>\u10007 </td><td>\u10003 </td><td>Win\u8594 WSL</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>K-Francis-H/usbip-gui</strong></td><td><span class="tag tp">USB/IP GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Linux</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>seastwood/usb-audio-ip</strong></td><td><span class="tag ty">USB/IP Niche</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Linux</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>alunux/usbip-service-disc.</strong></td><td><span class="tag tp">USB/IP GUI</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Linux</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>cryptedx/ha-usbip-client</strong></td><td><span class="tag ty">USB/IP Addon</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Home Asst.</td><td>\u10003 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>usbip-systemd (AUR)</strong></td><td><span class="tag tb">USB/IP Helper</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Arch Linux</td><td>\u10003 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>VirtualBox USB/IP</strong></td><td><span class="tag tb">USB/IP Built-in</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>All</td><td>Via config</td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>QEMU USB/IP</strong></td><td><span class="tag tb">USB/IP Built-in</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>Via virt-mgr</td><td>Linux/Win</td><td>Via XML</td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>Renode USB/IP server</strong></td><td><span class="tag ty">USB/IP Emulator</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>\u10003 </td><td>All</td><td>\u10007 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <tr><td><strong>CherryUSB</strong></td><td><span class="tag tb">USB/IP Embedded</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>MCU/Embedded</td><td>\u10003 </td><td>\u10003 </td><td>USB/IP</td></tr>\
+  <!-- COMMERCIAL -->\
+  <tr><td><strong>VirtualHere</strong></td><td><span class="tag ty">Commercial USB</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All+Android+RPi</td><td>\u10003 </td><td>Freemium</td><td>Proprietary</td></tr>\
+  <tr><td><strong>FlexiHub</strong></td><td><span class="tag ty">Commercial USB</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All+Android</td><td>\u10003 </td><td>Paid</td><td>Proprietary</td></tr>\
+  <tr><td><strong>USB Network Gate</strong></td><td><span class="tag ty">Commercial USB</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>Paid</td><td>Proprietary</td></tr>\
+  <tr><td><strong>USB Redirector</strong></td><td><span class="tag ty">Commercial USB</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Linux/OpenWrt</td><td>\u10003 </td><td>Paid</td><td>Proprietary</td></tr>\
+  <tr><td><strong>Donglify</strong></td><td><span class="tag ty">Commercial USB</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac</td><td>\u10003 </td><td>Paid</td><td>Proprietary</td></tr>\
+  <!-- HARDWARE -->\
+  <tr><td><strong>Digi AnywhereUSB Plus</strong></td><td><span class="tag to">Hardware</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Web UI</td><td>Win/Linux/RPi</td><td>\u10003 </td><td>Paid (HW)</td><td>Proprietary</td></tr>\
+  <tr><td><strong>SIIG USB over IP</strong></td><td><span class="tag to">Hardware</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Web UI</td><td>Win/Mac</td><td>\u10003 </td><td>Paid (HW)</td><td>Proprietary</td></tr>\
+  <tr><td><strong>Raspberry Pi (DIY)</strong></td><td><span class="tag to">Hardware DIY</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>Linux</td><td>systemd</td><td>Free (RPi cost)</td><td>USB/IP</td></tr>\
+  <!-- SPICE/RDP/VM -->\
+  <tr><td><strong>SPICE USB Redir.</strong></td><td><span class="tag tb">VM-native</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Linux/Win</td><td>\u10003 </td><td>\u10003 </td><td>SPICE</td></tr>\
+  <tr><td><strong>RDP USB Redir.</strong></td><td><span class="tag tb">Built-in</span></td><td>RDP srv</td><td>RDP cli</td><td>\uc0\u10007 </td><td>\u10003 </td><td>Windows</td><td>\u10003 </td><td>\u10003 </td><td>RDP</td></tr>\
+  <tr><td><strong>Citrix USB Redir.</strong></td><td><span class="tag ty">Enterprise</span></td><td>Citrix</td><td>Citrix RX</td><td>\uc0\u10007 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>Paid</td><td>ICA/HDX</td></tr>\
+  <!-- KVM -->\
+  <tr><td><strong>Deskflow</strong></td><td><span class="tag tz">Software KVM</span></td><td>~</td><td>~</td><td>~</td><td>\uc0\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>\u10003 </td><td>Synergy</td></tr>\
+  <tr><td><strong>Lan Mouse</strong></td><td><span class="tag tz">Software KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Lin/Mac</td><td>\u10003 </td><td>\u10003 </td><td>Custom</td></tr>\
+  <tr><td><strong>Input Leap</strong></td><td><span class="tag tz">Software KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>\u10003 </td><td>Synergy</td></tr>\
+  <tr><td><strong>Barrier</strong></td><td><span class="tag tz">Software KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>\u10003 </td><td>Synergy</td></tr>\
+  <tr><td><strong>Mouse Without Borders</strong></td><td><span class="tag tz">Software KVM</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Windows</td><td>\u10003 </td><td>\u10003 </td><td>MS proprietary</td></tr>\
+  <!-- SERIAL -->\
+  <tr><td><strong>socat</strong></td><td><span class="tag tb">Serial/TCP</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10007 </td><td>Linux/Mac</td><td>Via script</td><td>\u10003 </td><td>Raw TCP</td></tr>\
+  <tr><td><strong>ser2net</strong></td><td><span class="tag tb">Serial</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>Linux</td><td>systemd</td><td>\u10003 </td><td>TCP</td></tr>\
+  <!-- AUDIO -->\
+  <tr><td><strong>PipeWire network</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Linux</td><td>\u10003 </td><td>\u10003 </td><td>PipeWire</td></tr>\
+  <tr><td><strong>PulseAudio TCP</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Linux/Mac</td><td>\u10003 </td><td>\u10003 </td><td>PA protocol</td></tr>\
+  <tr><td><strong>Snapcast</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>systemd</td><td>\u10003 </td><td>Snapcast</td></tr>\
+  <tr><td><strong>JackTrip</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10007 </td><td>\u10003 </td><td>UDP</td></tr>\
+  <tr><td><strong>Sonobus</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Lin/iOS/And</td><td>\u10007 </td><td>\u10003 </td><td>P2P UDP</td></tr>\
+  <tr><td><strong>VBAN (Voicemeeter)</strong></td><td><span class="tag ty">Audio</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Windows</td><td>\u10003 </td><td>Free</td><td>VBAN UDP</td></tr>\
+  <tr><td><strong>NDI Tools</strong></td><td><span class="tag ty">A/V</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Win/Mac/Linux</td><td>\u10003 </td><td>Free SDK</td><td>NDI</td></tr>\
+  <!-- VIDEO -->\
+  <tr><td><strong>GStreamer</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Partial</td><td>All</td><td>Via script</td><td>\u10003 </td><td>RTP/RTSP</td></tr>\
+  <tr><td><strong>FFmpeg</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>All</td><td>Via script</td><td>\u10003 </td><td>RTMP/SRT</td></tr>\
+  <tr><td><strong>MediaMTX</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>Web UI</td><td>All</td><td>\u10003 </td><td>\u10003 </td><td>RTSP/HLS/WebRTC</td></tr>\
+  <tr><td><strong>Sunshine</strong></td><td><span class="tag ty">Video+Input</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Web UI</td><td>Win/Linux/Mac</td><td>\u10003 </td><td>\u10003 </td><td>GameStream</td></tr>\
+  <tr><td><strong>Moonlight</strong></td><td><span class="tag ty">Video+Input</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>All + TV</td><td>\u10003 </td><td>\u10003 </td><td>GameStream</td></tr>\
+  <tr><td><strong>v4l2loopback</strong></td><td><span class="tag ty">Video Utility</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Linux</td><td>Via script</td><td>\u10003 </td><td>V4L2</td></tr>\
+  <tr><td><strong>scrcpy</strong></td><td><span class="tag ty">Video</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Android+PC</td><td>\u10007 </td><td>\u10003 </td><td>USB/TCP</td></tr>\
+  <!-- REMOTE DESKTOP -->\
+  <tr><td><strong>RustDesk</strong></td><td><span class="tag to">Remote Desktop</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>\u10003 </td><td>Custom</td></tr>\
+  <tr><td><strong>NoMachine</strong></td><td><span class="tag to">Remote Desktop</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All+RPi+Android</td><td>\u10003 </td><td>Free/Paid</td><td>NX</td></tr>\
+  <tr><td><strong>AnyDesk</strong></td><td><span class="tag to">Remote Desktop</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>Free/Paid</td><td>DeskRT</td></tr>\
+  <tr><td><strong>Apache Guacamole</strong></td><td><span class="tag to">Remote Desktop</span></td><td>\uc0\u10003 </td><td>\u10007 </td><td>\u10007 </td><td>Browser</td><td>All</td><td>\u10003 </td><td>\u10003 </td><td>RDP/VNC/SSH</td></tr>\
+  <tr><td><strong>Remmina</strong></td><td><span class="tag to">Remote Desktop</span></td><td>\uc0\u10007 </td><td>\u10003 </td><td>\u10007 </td><td>\u10003 </td><td>Linux</td><td>\u10003 </td><td>\u10003 </td><td>RDP/VNC/SPICE</td></tr>\
+  <!-- VPN -->\
+  <tr><td><strong>WireGuard</strong></td><td><span class="tag tg">VPN</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>\u10003 </td><td>WireGuard/UDP</td></tr>\
+  <tr><td><strong>Tailscale</strong></td><td><span class="tag tg">VPN</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>Free/Paid</td><td>WireGuard</td></tr>\
+  <tr><td><strong>OpenVPN</strong></td><td><span class="tag tg">VPN</span></td><td>\uc0\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>\u10003 </td><td>All</td><td>\u10003 </td><td>\u10003 </td><td>OpenVPN</td></tr>\
+  <!-- DIAGNOSTIC -->\
+  <tr><td><strong>Wireshark</strong></td><td><span class="tag tz">Diagnostic</span></td><td>\uc0\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>\u10003 </td><td>All</td><td>\u10007 </td><td>\u10003 </td><td>USB/usbmon capture</td></tr>\
+  <tr><td><strong>UsbTreeView</strong></td><td><span class="tag tz">Diagnostic</span></td><td>\uc0\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>\u10003 </td><td>Windows</td><td>\u10007 </td><td>\u10003 </td><td>N/A</td></tr>\
+  <tr><td><strong>USBPcap</strong></td><td><span class="tag tz">Diagnostic</span></td><td>\uc0\u10007 </td><td>\u10007 </td><td>\u10007 </td><td>Via WS</td><td>Windows</td><td>\u10007 </td><td>\u10003 </td><td>USB capture</td></tr>\
+</table>\
+\
+<!-- ========== DECISION ========== -->\
+<h2 id="decision"><span class="ico">\uc0\u55357 \u56826 \u65039 </span> 44. Decision Tree \'97 Which Tool for Which Situation</h2>\
+\
+<div class="g2">\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56359  Linux server \u8594  Linux client, same LAN</h4>\
+    <p>\uc0\u8594  <strong>Linux kernel usbip</strong> directly. Load <code>usbip_host</code> server-side, <code>vhci-hcd</code> client-side. Systemd for auto-connect. GUI: K-Francis-H/usbip-gui or alunux/usbip-service-discovery.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55358 \u56991  Windows \u8594  WSL2 (simplest path)</h4>\
+    <p>\uc0\u8594  Install <strong>dorssel/usbipd-win</strong> first. Use <strong>nickbeth/wsl-usb-manager</strong> GUI for everything including auto-attach profiles.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55358 \u56991  Windows server \u8594  remote Linux client (Proxmox, VM, etc.)</h4>\
+    <p>\uc0\u8594  <strong>dorssel/usbipd-win</strong> on Windows + standard Linux usbip client on the other side. Or: QEMU native USB/IP client in your VM config.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55356 \u57171  Always-on USB device sharing (headless)</h4>\
+    <p>\uc0\u8594  <strong>Raspberry Pi</strong> with Linux usbip + systemd services. ~$50 total. Pairs with any USB/IP client on Linux, Windows (via usbipd-win client), or VirtualBox.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56592  Need it to work over the Internet securely</h4>\
+    <p>\uc0\u8594  Set up <strong>WireGuard</strong> or <strong>Tailscale</strong> between machines first. Then USB/IP as if on a LAN. Never expose port 3240 raw to the Internet.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56508  Need it to "just work" without configuration headache</h4>\
+    <p>\uc0\u8594  <strong>VirtualHere</strong> (1 device free, all platforms) or <strong>FlexiHub</strong> (subscription). Better isochronous handling, simpler setup, auto-connect out of the box.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56567  Need webcam sharing specifically</h4>\
+    <p>\uc0\u8594  Do NOT use raw USB/IP for HD video. Instead: <strong>GStreamer</strong> or <strong>MediaMTX</strong> for RTSP streaming. If you specifically need it to appear as a local USB webcam on the remote machine, try <strong>VirtualHere</strong> at MJPEG low-res, or use <strong>v4l2loopback</strong> to inject an RTSP stream as a virtual camera.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55356 \u57255  Need audio interface / USB audio sharing</h4>\
+    <p>\uc0\u8594  Try USB/IP on Gigabit LAN first (USB Audio Class 1 usually works). If it doesn't, use <strong>PipeWire network streaming</strong> (Linux) or <strong>Snapcast</strong> (all platforms) or <strong>VirtualHere</strong>.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55356 \u57262  Linux gaming \'97 gamepad + audio from headless PC</h4>\
+    <p>\uc0\u8594  <strong>seastwood/usb-audio-ip-client</strong> \'97 designed exactly for this use case with PipeWire integration.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55356 \u57312  Home Assistant Zigbee/Z-Wave dongle over USB/IP</h4>\
+    <p>\uc0\u8594  <strong>cryptedx/ha-usbip-client</strong> add-on \'97 auto-connects at HA startup; perfect for running HA in a container while the dongle is on a remote Pi.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u55357 \u56741 \u65039  Proxmox VM needs USB device</h4>\
+    <p>\uc0\u8594  Option A (device physically on Proxmox host): direct LXC bind-mount with <code>pct set --dev0</code> (PVE 8.1+). Option B (device on remote machine): set up USB/IP on remote, use QEMU's native USB/IP client in the VM config.</p>\
+  </div>\
+  <div class="card ca">\
+    <h4>\uc0\u9000 \u65039  Just need keyboard + mouse shared (not USB devices)</h4>\
+    <p>\uc0\u8594  <strong>Deskflow</strong> \'97 this is not a USB/IP problem at all. Deskflow/Input Leap/Lan Mouse handle this perfectly without any USB/IP stack.</p>\
+  </div>\
+</div>\
+\
+<hr class="divider">\
+\
+<div class="summary-big">\
+  <h3 style="color:#a78bfa;margin-bottom:16px">The Complete Picture in One Place</h3>\
+  <p><strong>USB/IP is a mature, Linux-kernel-native protocol</strong> that transparently tunnels USB device communications over TCP/IP. It has been in the Linux mainline kernel since 2014 and has spawned a rich ecosystem. It is <em>excellent</em> for: mass storage, HID devices, serial adapters, security dongles, printers, smartcard readers, UPS monitors, and USB audio on Gigabit LAN. It <em>struggles</em> with: high-bandwidth isochronous video, WiFi, WAN connections, USB 3.x speeds, and devices needing sub-millisecond timing. It has <em>zero native security</em> \'97 always use WireGuard/Tailscale or SSH tunneling when crossing untrusted networks.</p>\
+  <p style="margin-top:12px">On <strong>Windows</strong>: install <code>dorssel/usbipd-win</code> (server/backbone), optionally <code>vadimgrn/usbip-win2</code> (client driver), and <code>nickbeth/wsl-usb-manager</code> (GUI with auto-attach). On <strong>Linux</strong>: use the kernel modules directly + systemd services + udev rules. On <strong>Raspberry Pi</strong>: the cheapest dedicated USB/IP server you can build. On <strong>macOS</strong>: use VirtualHere or FlexiHub. For <strong>video</strong>: use GStreamer or MediaMTX instead of USB/IP. For <strong>enterprise</strong>: VirtualHere or FlexiHub. For <strong>auto-connect-everything</strong>: combine usbipd-win's <code>--auto-attach</code> with wsl-usb-manager profiles on Windows, or systemd + udev on Linux \'97 fully automated, zero manual steps after initial setup.</p>\
+</div>\
+\
+<p style="color:var(--mut);font-size:12px;margin-top:32px;border-top:1px solid var(--bdr);padding-top:16px">\
+  Sources: Linux kernel documentation (docs.kernel.org/usb/usbip_protocol.html), ArchWiki USB/IP article, dorssel/usbipd-win GitHub, vadimgrn/usbip-win2 GitHub, nickbeth/wsl-usb-manager GitHub, usbip.sourceforge.net, VirtualBox 6.0 documentation, Proxmox support forums, Oracle VM documentation, WireGuard documentation, blog.usro.net, ridgerun.com/wiki, anywhereusb.co.uk, adafruit.com blog, renode.readthedocs.io \'b7 Compiled March 2026\
+</p>\
+</body>\
+</html>}
