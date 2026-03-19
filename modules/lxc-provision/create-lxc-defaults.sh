@@ -72,7 +72,7 @@ fi
 echo "Creating LXC $vmid from template $template_path"
 # Create LXC (attempt conservative options)
 pct create "$vmid" "$template_path" \
-  --rootfs ${var_container_storage}:${var_disk}G \
+  --rootfs ${var_container_storage}:${var_disk} \
   --cores "$var_cpu" \
   --memory "$var_ram" \
   --net0 name=eth0,bridge=${var_brg},ip=${var_net},type=veth \
