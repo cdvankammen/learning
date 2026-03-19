@@ -1,0 +1,31 @@
+name: Self-hosted smoke tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_actual:
+        description: "Run actual provisioning (dangerous). Set to 'true' to perform changes. Default is 'false'."
+        required: false
+        default: 'false'
+
+jobs:
+  smoke:
+    name: LXC provisioning smoke test (self-hosted)
+    runs-on: [self-hosted, proxmox]
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure scripts executable
+        run: |
+          chmod +x tools/run-integration-smoke.sh
+
+      - name: Run integration smoke (dry-run by default)
+        env:
+          RUN_ACTUAL: ${{ github.event.inputs.run_actual }}
+        run: |
+          echo "RUN_ACTUAL=${RUN_ACTUAL}"
+          bash tools/run-integration-smoke.sh
