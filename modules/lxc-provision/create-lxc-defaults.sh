@@ -55,10 +55,14 @@ if [ -z "$vmid" ]; then
   fi
 fi
 
-# Find a debian 13 template in template cache
+# Find a debian ${var_version} template in template cache
 template_path=""
-for f in /var/lib/vz/template/cache/*debian*${var_version}* 2>/dev/null; do
-  if [ -f "$f" ]; then template_path="$f"; break; fi
+# Use a safe glob and avoid redirect in the for header
+for f in /var/lib/vz/template/cache/*debian*${var_version}*; do
+  if [ -f "$f" ]; then
+    template_path="$f"
+    break
+  fi
 done
 if [ -z "$template_path" ]; then
   echo "No debian-${var_version} template found in /var/lib/vz/template/cache. Please download a template or provide --template." >&2
