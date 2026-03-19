@@ -1,0 +1,3 @@
+# Repo-level ignores
+# If using a separate memory folder at /usbip/memory, ignore it from commits
+/memory/

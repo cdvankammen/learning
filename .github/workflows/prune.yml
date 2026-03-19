@@ -1,0 +1,25 @@
+name: Prune Backups
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+  push:
+    branches: [ main, master ]
+
+jobs:
+  prune-dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare logging dir
+        run: sudo mkdir -p /usbip/session-files && sudo chmod 777 /usbip/session-files
+      - name: Make prune script executable
+        run: chmod +x ./repo/modules/backup/prune-backups.sh || true
+      - name: Run prune (dry-run)
+        run: sudo ./repo/modules/backup/prune-backups.sh --dry-run || true
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: prune-logs
+          path: /usbip/session-files/**
