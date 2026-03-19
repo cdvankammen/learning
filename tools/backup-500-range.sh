@@ -5,7 +5,7 @@ LOGDIR=/usbip/session-files/backups
 mkdir -p "$LOGDIR"
 
 # gather VMIDs 500..999
-/usr/bin/pct list | awk 'NR>1 && $1 >= 500 && $1 <= 999 {print $1}' > /tmp/usbip-vmids-500.txt || true
+pct list | awk 'NR>1 && $1 >= 500 && $1 <= 999 {print $1}' > /tmp/usbip-vmids-500.txt || true
 
 while read -r vmid; do
   if [ -z "$vmid" ]; then
