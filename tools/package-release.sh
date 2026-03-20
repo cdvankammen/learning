@@ -64,7 +64,8 @@ mkdir -p "$STAGING_DIR/frontend"
 
 (
   cd "$REPO_ROOT/webapp/backend"
-  npx --yes pkg index.js --targets "node18-${TARGET}" --output "$STAGING_DIR/${BINARY_NAME}${BINARY_EXT}"
+  npm ci --no-audit --no-fund 2>/dev/null || true
+  ./node_modules/.bin/pkg index.js --targets "node18-${TARGET}" --output "$STAGING_DIR/${BINARY_NAME}${BINARY_EXT}"
 )
 
 cp -R "$FRONTEND_DIST" "$STAGING_DIR/frontend/dist"

@@ -2,9 +2,16 @@
   "name": "usbip-backend",
   "version": "0.1.0",
   "main": "index.js",
+  "bin": "index.js",
+  "pkg": {
+    "assets": ["../frontend/dist/**/*"],
+    "targets": ["node18-linux-x64", "node18-macos-x64", "node18-win-x64"],
+    "outputPath": "../../dist/releases"
+  },
   "scripts": {
     "start": "node index.js",
-    "test": "jest --forceExit --detectOpenHandles"
+    "test": "jest --forceExit --detectOpenHandles",
+    "package": "pkg index.js --targets node18-linux-x64,node18-macos-x64,node18-win-x64 --out-path ../../dist/releases"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -12,6 +19,8 @@
   },
   "devDependencies": {
     "jest": "^30.3.0",
+    "pkg": "^5.8.1",
     "supertest": "^7.2.2"
   }
 }
+
