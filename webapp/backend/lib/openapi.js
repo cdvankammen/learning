@@ -167,6 +167,22 @@ const OPENAPI_SPEC = {
         responses: { 200: { description: 'Remote USB/IP device list', content: { 'application/json': { schema: { $ref: '#/components/schemas/UsbipRemoteDevicesResponse' } } } } }
       }
     },
+    '/api/peers': {
+      get: {
+        tags: ['Discovery'],
+        summary: 'List persisted peer nodes',
+        responses: { 200: { description: 'Persisted peer list', content: { 'application/json': { schema: { $ref: '#/components/schemas/PeerListResponse' } } } } }
+      },
+      put: {
+        tags: ['Discovery'],
+        summary: 'Replace the persisted peer node list',
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/PeerListUpdateRequest' } } }
+        },
+        responses: { 200: { description: 'Updated peer list', content: { 'application/json': { schema: { $ref: '#/components/schemas/PeerListResponse' } } } } }
+      }
+    },
     '/api/usbip/bind': {
       post: {
         tags: ['USB/IP'],
@@ -207,6 +223,13 @@ const OPENAPI_SPEC = {
         tags: ['Discovery'],
         summary: 'Discover peers on the LAN',
         responses: { 200: { description: 'Discovery snapshot', content: { 'application/json': { schema: { $ref: '#/components/schemas/DiscoveryResponse' } } } } }
+      }
+    },
+    '/api/persistence': {
+      get: {
+        tags: ['Meta'],
+        summary: 'Get the persisted backend snapshot',
+        responses: { 200: { description: 'Persistence snapshot', content: { 'application/json': { schema: { $ref: '#/components/schemas/PersistenceSnapshot' } } } } }
       }
     },
     '/api/virtual-bridges': {
@@ -394,6 +417,34 @@ const OPENAPI_SPEC = {
           devices: { type: 'array', items: { type: 'object', additionalProperties: true } },
           raw: { type: 'string' },
           warning: { type: 'string', nullable: true }
+        }
+      },
+      PeerListResponse: {
+        type: 'object',
+        required: ['peers'],
+        properties: {
+          peers: { type: 'array', items: { type: 'string' } },
+          metadata: { type: 'object', additionalProperties: true },
+          filePath: { type: 'string' }
+        }
+      },
+      PeerListUpdateRequest: {
+        type: 'object',
+        required: ['peers'],
+        properties: {
+          peers: { type: 'array', items: { type: 'string' } }
+        }
+      },
+      PersistenceSnapshot: {
+        type: 'object',
+        required: ['schemaVersion', 'metadata', 'peers', 'deviceHistory', 'auditEvents'],
+        properties: {
+          schemaVersion: { type: 'number' },
+          metadata: { type: 'object', additionalProperties: true },
+          peers: { type: 'array', items: { type: 'string' } },
+          deviceHistory: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          auditEvents: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          filePath: { type: 'string' }
         }
       },
       BusidRequest: {

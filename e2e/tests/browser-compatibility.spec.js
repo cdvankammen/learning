@@ -46,3 +46,23 @@ test('virtual devices keep codec guidance separate from USB/IP transport', async
   await expect(note).toContainText('go2rtc, PipeWire, v4l2loopback, and ALSA loopback');
   await expect(page.getByRole('heading', { name: 'Bridge inventory' })).toBeVisible();
 });
+
+test('computers page restores persisted peers from the backend store', async ({ page, request }) => {
+  try {
+    const seedResponse = await request.put('/api/peers', {
+      data: { peers: ['http://peer-a:3001'] }
+    });
+    expect(seedResponse.ok()).toBe(true);
+
+    await page.goto('/computers');
+    const peerCard = page.locator('.peer-card').filter({ hasText: 'http://peer-a:3001' }).first();
+    await expect(peerCard).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator('.peer-card').filter({ hasText: 'http://peer-a:3001' }).first()).toBeVisible();
+  } finally {
+    await request.put('/api/peers', {
+      data: { peers: [] }
+    });
+  }
+});

@@ -11,6 +11,8 @@ const { createAuthMiddleware } = require('./lib/auth');
 const { recordHttpRequest, renderPrometheusMetrics } = require('./lib/metrics');
 const setupSocket = require('./socket-server');
 const { createMutationQueue } = require('./lib/mutation-queue');
+const { createPersistenceStore } = require('./lib/persistence');
+const { normalizePeerBaseUrl } = require('./lib/peers');
 const { OPENAPI_SPEC } = require('./lib/openapi');
 const {
   parseConfiguredInteger,
@@ -28,6 +30,7 @@ const pkg = require('./package.json');
 const CONFIG_DIR = process.env.USBIP_CONFIG_DIR ||
   path.join(os.homedir(), '.config', 'usbip-web');
 const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
+const persistence = createPersistenceStore({ configDir: CONFIG_DIR });
 
 function loadSettingsFileRaw() {
   try {
@@ -166,6 +169,11 @@ function buildHealthComponents() {
     },
     settingsDir: {
       available: fs.existsSync(CONFIG_DIR)
+    },
+    persistence: {
+      available: true,
+      file: persistence.filePath,
+      peerCount: persistence.listPeers().length
     }
   };
 }
@@ -205,6 +213,18 @@ function isDryRun(req) {
 
 function respondDryRun(res, payload) {
   res.json(Object.assign({ ok: true, dryRun: true }, payload));
+}
+
+function persistAuditEvent(event) {
+  persistence.recordAuditEvent(event).catch(err => {
+    console.warn(`Failed to persist audit event: ${err.message}`);
+  });
+}
+
+function persistDeviceSnapshot(snapshot) {
+  persistence.recordDeviceSnapshot(snapshot).catch(err => {
+    console.warn(`Failed to persist device snapshot: ${err.message}`);
+  });
 }
 
 function formatNetworkUrl(address) {
@@ -275,8 +295,24 @@ app.get('/api/backups', (_req, res) => {
 // ── USB/IP endpoints ───────────────────────────────────────
 app.get('/api/usbip/devices', (_req, res) => {
   const raw = runUsbipSync(['list', '-l']);
-  if (!raw) return res.json({ devices: [], raw: '', error: 'usbip not available' });
+  if (!raw) {
+    persistDeviceSnapshot({
+      kind: 'usbip-devices',
+      source: 'local',
+      error: 'usbip not available',
+      deviceCount: 0,
+      devices: []
+    });
+    return res.json({ devices: [], raw: '', error: 'usbip not available' });
+  }
   const parsed = parseUsbipDevices(raw);
+  persistDeviceSnapshot({
+    kind: 'usbip-devices',
+    source: 'local',
+    deviceCount: parsed.devices.length,
+    devices: parsed.devices,
+    warning: parsed.warning
+  });
   res.json({ devices: parsed.devices, raw, warning: parsed.warning });
 });
 
@@ -296,8 +332,24 @@ app.get('/api/usbip/capabilities', (_req, res) => {
 
 app.get('/api/usbip/ports', (_req, res) => {
   const raw = runUsbipSync(['port']);
-  if (!raw) return res.json({ ports: [], raw: '', error: 'usbip not available' });
+  if (!raw) {
+    persistDeviceSnapshot({
+      kind: 'usbip-ports',
+      source: 'local',
+      error: 'usbip not available',
+      portCount: 0,
+      ports: []
+    });
+    return res.json({ ports: [], raw: '', error: 'usbip not available' });
+  }
   const parsed = parseUsbipPorts(raw);
+  persistDeviceSnapshot({
+    kind: 'usbip-ports',
+    source: 'local',
+    portCount: parsed.ports.length,
+    ports: parsed.ports,
+    warning: parsed.warning
+  });
   res.json({ ports: parsed.ports, raw, warning: parsed.warning });
 });
 
@@ -305,20 +357,88 @@ app.get('/api/usbip/remote/:host/devices', (req, res) => {
   const host = req.params.host;
   if (!isValidHost(host)) return res.status(400).json({ error: 'invalid host' });
   const raw = runUsbipSync(['list', '-r', host]);
-  if (!raw) return res.json({ host, devices: [], raw: '', error: 'usbip not available or host unreachable' });
+  if (!raw) {
+    persistDeviceSnapshot({
+      kind: 'usbip-remote-devices',
+      source: host,
+      error: 'usbip not available or host unreachable',
+      deviceCount: 0,
+      devices: []
+    });
+    return res.json({ host, devices: [], raw: '', error: 'usbip not available or host unreachable' });
+  }
   const parsed = parseUsbipDevices(raw);
+  persistDeviceSnapshot({
+    kind: 'usbip-remote-devices',
+    source: host,
+    deviceCount: parsed.devices.length,
+    devices: parsed.devices,
+    warning: parsed.warning
+  });
   res.json({ host, devices: parsed.devices, raw, warning: parsed.warning });
+});
+
+app.get('/api/peers', (_req, res) => {
+  const snapshot = persistence.getSnapshot();
+  res.json({
+    peers: snapshot.peers,
+    metadata: snapshot.metadata,
+    filePath: persistence.filePath
+  });
+});
+
+app.put('/api/peers', (req, res) => {
+  const incomingPeers = Array.isArray(req.body?.peers) ? req.body.peers : [];
+  const invalidPeers = [];
+  const normalizedPeers = [];
+
+  for (const peer of incomingPeers) {
+    const normalized = normalizePeerBaseUrl(peer);
+    if (!normalized) {
+      invalidPeers.push(peer);
+      continue;
+    }
+
+    if (!normalizedPeers.includes(normalized)) {
+      normalizedPeers.push(normalized);
+    }
+  }
+
+  persistence.replacePeers(normalizedPeers, {
+    actor: 'api',
+    source: req.get('user-agent') || 'unknown'
+  }).then(snapshot => {
+    res.json({
+      ok: true,
+      peers: snapshot.peers,
+      metadata: snapshot.metadata,
+      invalidPeers,
+      filePath: persistence.filePath
+    });
+  }).catch(err => {
+    res.status(500).json({ error: `Could not save peers: ${err.message}` });
+  });
+});
+
+app.get('/api/persistence', (_req, res) => {
+  const snapshot = persistence.getSnapshot();
+  res.json(Object.assign({ filePath: persistence.filePath }, snapshot));
 });
 
 app.post('/api/usbip/bind', async (req, res) => {
   const { busid } = req.body;
   if (!isValidBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
-  if (isDryRun(req)) return respondDryRun(res, { busid, action: 'bind', command: `usbip bind -b ${busid}` });
+  if (isDryRun(req)) {
+    persistAuditEvent({ type: 'usbip.bind', status: 'dry-run', busid, actor: 'api' });
+    return respondDryRun(res, { busid, action: 'bind', command: `usbip bind -b ${busid}` });
+  }
   try {
     const result = await usbipMutationQueue.run(() => runUsbipAsync(['bind', '-b', busid]));
     if (realtime) realtime.refreshUsbip();
+    persistAuditEvent({ type: 'usbip.bind', status: 'success', busid, actor: 'api' });
     res.json({ ok: true, output: result.stdout });
   } catch (err) {
+    persistAuditEvent({ type: 'usbip.bind', status: 'error', busid, actor: 'api', error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -326,12 +446,17 @@ app.post('/api/usbip/bind', async (req, res) => {
 app.post('/api/usbip/unbind', async (req, res) => {
   const { busid } = req.body;
   if (!isValidBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
-  if (isDryRun(req)) return respondDryRun(res, { busid, action: 'unbind', command: `usbip unbind -b ${busid}` });
+  if (isDryRun(req)) {
+    persistAuditEvent({ type: 'usbip.unbind', status: 'dry-run', busid, actor: 'api' });
+    return respondDryRun(res, { busid, action: 'unbind', command: `usbip unbind -b ${busid}` });
+  }
   try {
     const result = await usbipMutationQueue.run(() => runUsbipAsync(['unbind', '-b', busid]));
     if (realtime) realtime.refreshUsbip();
+    persistAuditEvent({ type: 'usbip.unbind', status: 'success', busid, actor: 'api' });
     res.json({ ok: true, output: result.stdout });
   } catch (err) {
+    persistAuditEvent({ type: 'usbip.unbind', status: 'error', busid, actor: 'api', error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -341,6 +466,7 @@ app.post('/api/usbip/connect', async (req, res) => {
   if (!isValidHost(host)) return res.status(400).json({ error: 'invalid host' });
   if (!isValidBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
   if (isDryRun(req)) {
+    persistAuditEvent({ type: 'usbip.connect', status: 'dry-run', host, busid, actor: 'api' });
     return respondDryRun(res, {
       host,
       busid,
@@ -351,8 +477,10 @@ app.post('/api/usbip/connect', async (req, res) => {
   try {
     const result = await usbipMutationQueue.run(() => runUsbipAsync(['attach', '-r', host, '-b', busid]));
     if (realtime) realtime.refreshUsbip();
+    persistAuditEvent({ type: 'usbip.connect', status: 'success', host, busid, actor: 'api' });
     res.json({ ok: true, host, busid, output: result.stdout });
   } catch (err) {
+    persistAuditEvent({ type: 'usbip.connect', status: 'error', host, busid, actor: 'api', error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -362,6 +490,7 @@ app.post('/api/usbip/disconnect', async (req, res) => {
   if (!isValidPort(port)) return res.status(400).json({ error: 'invalid port' });
   const normalizedPort = normalizePort(port);
   if (isDryRun(req)) {
+    persistAuditEvent({ type: 'usbip.disconnect', status: 'dry-run', port: normalizedPort, actor: 'api' });
     return respondDryRun(res, {
       port: normalizedPort,
       action: 'disconnect',
@@ -371,8 +500,10 @@ app.post('/api/usbip/disconnect', async (req, res) => {
   try {
     const result = await usbipMutationQueue.run(() => runUsbipAsync(['detach', '-p', normalizedPort]));
     if (realtime) realtime.refreshUsbip();
+    persistAuditEvent({ type: 'usbip.disconnect', status: 'success', port: normalizedPort, actor: 'api' });
     res.json({ ok: true, port: normalizedPort, output: result.stdout });
   } catch (err) {
+    persistAuditEvent({ type: 'usbip.disconnect', status: 'error', port: normalizedPort, actor: 'api', error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -401,6 +532,13 @@ app.get('/api/discovery/peers', (req, res, next) => {
     concurrency
   })
     .then(report => {
+      persistAuditEvent({
+        type: 'discovery.refresh',
+        status: 'success',
+        peerCount: report.peerCount,
+        providerCount: report.providerCount,
+        actor: 'api'
+      });
       res.json({
         bindHost: LISTEN_HOST,
         port: PORT,
@@ -409,7 +547,10 @@ app.get('/api/discovery/peers', (req, res, next) => {
         ...report
       });
     })
-    .catch(next);
+    .catch(err => {
+      persistAuditEvent({ type: 'discovery.refresh', status: 'error', actor: 'api', error: err.message });
+      next(err);
+    });
 });
 
 app.get('/api/virtual-bridges', (_req, res) => {
@@ -433,9 +574,24 @@ app.post('/api/virtual-bridges/:id/:action', mutationLimiter, (req, res) => {
 
   runVirtualBridgeAction(req.params.id, req.params.action, { timeoutMs, dryRun })
     .then(result => {
+      persistAuditEvent({
+        type: 'virtual-bridge.action',
+        status: dryRun ? 'dry-run' : 'success',
+        bridgeId: req.params.id,
+        action: req.params.action,
+        actor: 'api'
+      });
       res.json(result);
     })
     .catch(err => {
+      persistAuditEvent({
+        type: 'virtual-bridge.action',
+        status: 'error',
+        bridgeId: req.params.id,
+        action: req.params.action,
+        actor: 'api',
+        error: err.message
+      });
       const statusCode = Number(err.statusCode) || 500;
       res.status(statusCode).json({
         error: err.message,
@@ -484,9 +640,16 @@ app.post('/api/lxc/:id/start', (req, res) => {
   const id = req.params.id;
   if (!isValidVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
   const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
-  if (dryRun) return res.json({ ok: true, vmid: id, action: 'start', dryRun: true, message: 'Simulated start' });
+  if (dryRun) {
+    persistAuditEvent({ type: 'lxc.start', status: 'dry-run', vmid: id, actor: 'api' });
+    return res.json({ ok: true, vmid: id, action: 'start', dryRun: true, message: 'Simulated start' });
+  }
   exec(`pct start ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
+    if (err) {
+      persistAuditEvent({ type: 'lxc.start', status: 'error', vmid: id, actor: 'api', error: stderr || err.message });
+      return res.status(500).json({ error: stderr || err.message });
+    }
+    persistAuditEvent({ type: 'lxc.start', status: 'success', vmid: id, actor: 'api' });
     res.json({ ok: true, vmid: id, action: 'started', output: stdout });
   });
 });
@@ -497,21 +660,33 @@ app.post('/api/lxc/:id/stop', (req, res) => {
   const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
   if (dryRun) {
     const recent = isBackupRecent(id, 4);
+    persistAuditEvent({ type: 'lxc.stop', status: 'dry-run', vmid: id, actor: 'api', backupRecent: recent });
     return res.json({ ok: true, vmid: id, action: 'stop', dryRun: true, backupRecent: recent });
   }
 
   // ensure recent backup before destructive change
   if (!isBackupRecent(id, 4)) {
     triggerBackup(id, (err, result) => {
-      if (err) return res.status(500).json({ error: 'backup failed before stop', details: err.message || String(err) });
+      if (err) {
+        persistAuditEvent({ type: 'lxc.stop', status: 'error', vmid: id, actor: 'api', error: `backup failed before stop: ${err.message || String(err)}` });
+        return res.status(500).json({ error: 'backup failed before stop', details: err.message || String(err) });
+      }
       exec(`pct stop ${id}`, { timeout: 30000 }, (err2, stdout2, stderr2) => {
-        if (err2) return res.status(500).json({ error: stderr2 || err2.message });
+        if (err2) {
+          persistAuditEvent({ type: 'lxc.stop', status: 'error', vmid: id, actor: 'api', error: stderr2 || err2.message });
+          return res.status(500).json({ error: stderr2 || err2.message });
+        }
+        persistAuditEvent({ type: 'lxc.stop', status: 'success', vmid: id, actor: 'api', backupMode: result.mode });
         res.json({ ok: true, vmid: id, action: 'stopped', backup: result, output: stdout2 });
       });
     });
   } else {
     exec(`pct stop ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
-      if (err) return res.status(500).json({ error: stderr || err.message });
+      if (err) {
+        persistAuditEvent({ type: 'lxc.stop', status: 'error', vmid: id, actor: 'api', error: stderr || err.message });
+        return res.status(500).json({ error: stderr || err.message });
+      }
+      persistAuditEvent({ type: 'lxc.stop', status: 'success', vmid: id, actor: 'api' });
       res.json({ ok: true, vmid: id, action: 'stopped', output: stdout });
     });
   }
@@ -522,10 +697,17 @@ app.post('/api/backups/trigger/:vmid', (req, res) => {
   const vmid = req.params.vmid;
   if (!isValidVmid(vmid)) return res.status(400).json({ error: 'invalid vmid' });
   const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
-  if (dryRun) return res.json({ ok: true, vmid, dryRun: true, message: 'Would trigger backup (dry-run)' });
+  if (dryRun) {
+    persistAuditEvent({ type: 'backup.trigger', status: 'dry-run', vmid, actor: 'api' });
+    return res.json({ ok: true, vmid, dryRun: true, message: 'Would trigger backup (dry-run)' });
+  }
   triggerBackup(vmid, (err, result) => {
-    if (err) return res.status(500).json({ error: 'backup failed', details: err.message || String(err) });
+    if (err) {
+      persistAuditEvent({ type: 'backup.trigger', status: 'error', vmid, actor: 'api', error: err.message || String(err) });
+      return res.status(500).json({ error: 'backup failed', details: err.message || String(err) });
+    }
     if (realtime) realtime.refreshBackups();
+    persistAuditEvent({ type: 'backup.trigger', status: 'success', vmid, actor: 'api', backupMode: result.mode });
     res.json(Object.assign({ ok: true, vmid }, result));
   });
 });
@@ -643,8 +825,10 @@ app.post('/api/settings', (req, res) => {
     fs.mkdirSync(CONFIG_DIR, { recursive: true });
     const merged = Object.assign(readSettings(), incoming);
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(merged, null, 2), 'utf8');
+    persistAuditEvent({ type: 'settings.save', status: 'success', actor: 'api', keys: Object.keys(incoming) });
     res.json({ ok: true, saved: merged, configFile: SETTINGS_FILE });
   } catch (err) {
+    persistAuditEvent({ type: 'settings.save', status: 'error', actor: 'api', error: err.message });
     res.status(500).json({ error: `Could not save settings: ${err.message}` });
   }
 });

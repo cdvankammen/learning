@@ -1,20 +1,29 @@
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
 const request = require('supertest')
 
-// We need to import app without starting the server on port 3001
-// The backend exports { app, server }. We'll use supertest against app directly.
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), `usbip-api-${process.pid}-`))
+process.env.PORT = '0'
+process.env.USBIP_CONFIG_DIR = tmpDir
+
 let app, server
 
 beforeAll(() => {
-  // Override PORT to avoid conflict with running instance
-  process.env.PORT = '0'
+  jest.resetModules()
   const backend = require('../index.js')
   app = backend.app
   server = backend.server
 })
 
 afterAll((done) => {
-  if (server) server.close(done)
-  else done()
+  const cleanup = () => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+    done()
+  }
+
+  if (server) server.close(cleanup)
+  else cleanup()
 })
 
 describe('GET /api/health', () => {
@@ -275,25 +284,13 @@ describe('POST /api/settings/validate', () => {
 })
 
 describe('POST /api/settings', () => {
-  const os = require('os')
-  const path = require('path')
-  const fs = require('fs')
-
   test('saves valid settings and returns ok', async () => {
-    // Use a temp config dir so we do not pollute the host
-    const tmpDir = path.join(os.tmpdir(), `usbip-test-settings-${process.pid}`)
-    process.env.USBIP_CONFIG_DIR = tmpDir
-    try {
-      const res = await request(app)
-        .post('/api/settings')
-        .send({ port: 3002, bindHost: '0.0.0.0', logRequests: true })
-      expect(res.status).toBe(200)
-      expect(res.body.ok).toBe(true)
-      expect(res.body.saved).toHaveProperty('port', 3002)
-    } finally {
-      delete process.env.USBIP_CONFIG_DIR
-      fs.rmSync(tmpDir, { recursive: true, force: true })
-    }
+    const res = await request(app)
+      .post('/api/settings')
+      .send({ port: 3002, bindHost: '0.0.0.0', logRequests: true })
+    expect(res.status).toBe(200)
+    expect(res.body.ok).toBe(true)
+    expect(res.body.saved).toHaveProperty('port', 3002)
   })
 
   test('rejects and returns 400 on invalid settings', async () => {

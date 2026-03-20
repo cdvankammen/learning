@@ -58,6 +58,22 @@ The backend binds to all interfaces by default, so you can reach it through any 
 
 Live UI updates are pushed over the backend WebSocket endpoint at `/ws`, so the Clients, Devices, Computers, and optional Proxmox views refresh without manual reloads when the backend state changes.
 
+### Deployment options
+
+The same app can be started in a few different ways:
+
+```bash
+# Self-contained Docker image
+docker compose up --build -d
+
+# Proxmox LXC bootstrap helper
+sudo bash modules/lxc-provision/install-usbip-lxc.sh --repo-url "$(git remote get-url origin)" --dry-run
+```
+
+See [`docs/deployment-options.md`](docs/deployment-options.md) for the longer deployment notes, including the Docker volume layout, the LXC helper flow, and the roadmap note for future runtime variants.
+
+Saved peers now persist through the backend `GET /api/peers` and `PUT /api/peers` routes, and the full runtime snapshot is available from `GET /api/persistence`.
+
 The backend also serves `GET /api/openapi.json` as a machine-readable API description for the current HTTP routes.
 
 The terminal CLI lives at `bin/usbip-ctl`. Point `API_URL` at any node's `/api` base URL to control that node directly from the terminal:
@@ -134,6 +150,9 @@ The web UI and `usbip-ctl virtual` namespace manage those bridges separately fro
 | GET | `/api/settings` | Current settings snapshot with schema and config file path |
 | POST | `/api/settings` | Save settings (validates first; 400 on error) |
 | POST | `/api/settings/validate` | Validate settings payload without saving |
+| GET | `/api/peers` | Persisted peer node list |
+| PUT | `/api/peers` | Replace the persisted peer node list |
+| GET | `/api/persistence` | Full backend persistence snapshot |
 | GET | `/api/lxc/list` | List all LXC containers |
 | GET | `/api/lxc/:id/status` | Single container status |
 | GET | `/api/backups` | List vzdump backup archives |

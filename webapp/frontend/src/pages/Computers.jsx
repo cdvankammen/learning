@@ -78,6 +78,7 @@ export default function Computers({ socket }) {
   const [network, setNetwork] = useState(null)
   const [capabilities, setCapabilities] = useState(null)
   const [peers, setPeers] = useState(loadSavedPeers())
+  const [peerStoreReady, setPeerStoreReady] = useState(false)
   const [peerStates, setPeerStates] = useState({})
   const [discovery, setDiscovery] = useState(null)
   const [discoveryLoading, setDiscoveryLoading] = useState(true)
@@ -93,6 +94,36 @@ export default function Computers({ socket }) {
   useEffect(() => {
     saveSavedPeers(peers)
   }, [peers])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const { signal } = controller
+
+    async function refreshStoredPeers() {
+      try {
+        const snapshot = await fetchJson('/api/peers', { signal })
+        if (signal.aborted) return
+        if (Array.isArray(snapshot.peers) && snapshot.peers.length > 0) {
+          setPeers(snapshot.peers)
+        }
+      } catch (err) {
+        if (!signal.aborted) {
+          setMessage(`Peer store unavailable; using browser cache (${err.message})`)
+        }
+      } finally {
+        if (!signal.aborted) setPeerStoreReady(true)
+      }
+    }
+
+    refreshStoredPeers().catch(err => {
+      if (!signal.aborted) {
+        setMessage(`Peer store unavailable; using browser cache (${err.message})`)
+        setPeerStoreReady(true)
+      }
+    })
+
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     if (!socket) return undefined
@@ -118,6 +149,39 @@ export default function Computers({ socket }) {
   useEffect(() => {
     if (error) notify(error, 'error')
   }, [error, notify])
+
+  useEffect(() => {
+    if (!peerStoreReady) return undefined
+
+    const controller = new AbortController()
+    const { signal } = controller
+
+    async function persistPeers() {
+      try {
+        const snapshot = await fetchJson('/api/peers', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ peers }),
+          signal
+        })
+        if (!signal.aborted && Array.isArray(snapshot.peers)) {
+          saveSavedPeers(snapshot.peers)
+        }
+      } catch (err) {
+        if (!signal.aborted) {
+          setMessage(`Saved peers locally, but backend persistence failed: ${err.message}`)
+        }
+      }
+    }
+
+    persistPeers().catch(err => {
+      if (!signal.aborted) {
+        setMessage(`Saved peers locally, but backend persistence failed: ${err.message}`)
+      }
+    })
+
+    return () => controller.abort()
+  }, [peers, peerStoreReady])
 
   const refreshDiscovery = useCallback(async (signal) => {
     const requestSignal = signal || undefined
@@ -325,7 +389,8 @@ export default function Computers({ socket }) {
       <h2>Computers <span className="refresh-dot">●</span></h2>
       <p className="page-note">
         This page lists computers on the LAN, their reachable URLs, and direct links to each node&apos;s own management UI.
-        Use a real LAN IP or hostname here; <code>0.0.0.0</code> is only for binding the server.
+        Use a real LAN IP or hostname here; <code>0.0.0.0</code> is only for binding the server. Saved peers are now
+        persisted by the backend and mirrored in browser cache so they survive reloads.
       </p>
 
       {loading && <div className="card">Loading network inventory...</div>}

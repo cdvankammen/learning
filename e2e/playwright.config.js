@@ -7,7 +7,7 @@ module.exports = defineConfig({
     baseURL: process.env.BASE_URL || 'http://127.0.0.1:4199'
   },
   webServer: process.env.BASE_URL ? undefined : {
-    command: 'cd .. && npm run build && PORT=4199 npm run serve',
+    command: 'cd .. && npm run build && USBIP_CONFIG_DIR=$(mktemp -d) PORT=4199 npm run serve',
     port: 4199,
     reuseExistingServer: false,
     timeout: 120000
