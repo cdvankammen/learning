@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { fetchJson } from '../lib/http'
 
 function loadSavedHosts() {
   if (typeof window === 'undefined') return []
@@ -16,21 +17,6 @@ function saveSavedHosts(hosts) {
   window.localStorage.setItem('usbip.remoteHosts', JSON.stringify(hosts))
 }
 
-async function readJson(url) {
-  const res = await fetch(url)
-  const data = await res.json().catch(() => ({}))
-  return { ok: res.ok, data }
-}
-
-async function requestJson(url, options) {
-  const res = await fetch(url, options)
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    throw new Error(data.error || res.statusText || 'Request failed')
-  }
-  return data
-}
-
 function renderCapability(value) {
   return value === null ? 'unbounded' : String(value)
 }
@@ -44,37 +30,53 @@ export default function Devices() {
   const [hostInput, setHostInput] = useState('')
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     saveSavedHosts(remoteHosts)
   }, [remoteHosts])
 
-  async function refreshLocalState(cancelled = { current: false }) {
-    const [capsRes, localRes, portsRes] = await Promise.all([
-      readJson('/api/usbip/capabilities'),
-      readJson('/api/usbip/devices'),
-      readJson('/api/usbip/ports')
+  useEffect(() => {
+    if (!message) return undefined
+    const timer = setTimeout(() => setMessage(null), 4000)
+    return () => clearTimeout(timer)
+  }, [message])
+
+  async function refreshLocalState(signal) {
+    const requestOptions = signal ? { signal } : undefined
+    const [capsResult, localResult, portsResult] = await Promise.allSettled([
+      fetchJson('/api/usbip/capabilities', requestOptions),
+      fetchJson('/api/usbip/devices', requestOptions),
+      fetchJson('/api/usbip/ports', requestOptions)
     ])
 
-    if (cancelled.current) return
+    if (signal && signal.aborted) return
 
-    setCapabilities(capsRes.data || null)
-    setDevices(localRes.data.devices || [])
-    setPorts(portsRes.data.ports || [])
+    if (capsResult.status === 'fulfilled') {
+      setCapabilities(capsResult.value || null)
+    }
+    if (localResult.status === 'fulfilled') {
+      setDevices(localResult.value.devices || [])
+    }
+    if (portsResult.status === 'fulfilled') {
+      setPorts(portsResult.value.ports || [])
+    }
 
-    const errors = [capsRes, localRes, portsRes]
-      .map(result => result.data && result.data.error)
-      .filter(Boolean)
+    const errors = [capsResult, localResult, portsResult]
+      .filter(result => result.status === 'rejected')
+      .map(result => result.reason.message)
 
     setError(errors.length > 0 ? errors.join(' • ') : null)
+    setLoading(false)
   }
 
   useEffect(() => {
-    const cancelled = { current: false }
+    const controller = new AbortController()
+    const { signal } = controller
 
-    async function refreshRemote(host) {
-      const { data } = await readJson(`/api/usbip/remote/${encodeURIComponent(host)}/devices`)
-      if (cancelled.current) return
+    async function refreshRemote(host, currentSignal = signal) {
+      const data = await fetchJson(`/api/usbip/remote/${encodeURIComponent(host)}/devices`, { signal: currentSignal })
+      if (currentSignal.aborted) return
 
       setRemoteData(prev => ({
         ...prev,
@@ -86,12 +88,15 @@ export default function Devices() {
       }))
     }
 
-    refreshLocalState(cancelled).catch(err => {
-      if (!cancelled.current) setError(err.message)
+    refreshLocalState(signal).catch(err => {
+      if (!signal.aborted) {
+        setError(err.message)
+        setLoading(false)
+      }
     })
     remoteHosts.forEach(host => {
-      refreshRemote(host).catch(err => {
-        if (!cancelled.current) {
+      refreshRemote(host, signal).catch(err => {
+        if (!signal.aborted) {
           setRemoteData(prev => ({
             ...prev,
             [host]: { devices: [], raw: '', error: err.message }
@@ -101,12 +106,12 @@ export default function Devices() {
     })
 
     const interval = setInterval(() => {
-      refreshLocalState(cancelled).catch(err => {
-        if (!cancelled.current) setError(err.message)
+      refreshLocalState(signal).catch(err => {
+        if (!signal.aborted) setError(err.message)
       })
       remoteHosts.forEach(host => {
-        refreshRemote(host).catch(err => {
-          if (!cancelled.current) {
+        refreshRemote(host, signal).catch(err => {
+          if (!signal.aborted) {
             setRemoteData(prev => ({
               ...prev,
               [host]: { devices: [], raw: '', error: err.message }
@@ -117,7 +122,7 @@ export default function Devices() {
     }, 15000)
 
     return () => {
-      cancelled.current = true
+      controller.abort()
       clearInterval(interval)
     }
   }, [remoteHosts])
@@ -147,27 +152,36 @@ export default function Devices() {
   }
 
   async function refreshRemoteHost(host) {
-    const { data } = await readJson(`/api/usbip/remote/${encodeURIComponent(host)}/devices`)
-    setRemoteData(prev => ({
-      ...prev,
-      [host]: {
-        devices: data.devices || [],
-        raw: data.raw || '',
-        error: data.error || null
-      }
-    }))
-    setError(data.error || null)
+    try {
+      const data = await fetchJson(`/api/usbip/remote/${encodeURIComponent(host)}/devices`)
+      setRemoteData(prev => ({
+        ...prev,
+        [host]: {
+          devices: data.devices || [],
+          raw: data.raw || '',
+          error: data.error || null
+        }
+      }))
+      setError(data.error || null)
+    } catch (err) {
+      setRemoteData(prev => ({
+        ...prev,
+        [host]: { devices: [], raw: '', error: err.message }
+      }))
+      setError(err.message)
+    }
   }
 
   async function handleBind(busid) {
     setMessage(`Binding ${busid}...`)
     try {
-      await requestJson('/api/usbip/bind', {
+      await fetchJson('/api/usbip/bind', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ busid })
       })
       setMessage(`Bound ${busid}`)
+      setError(null)
       await refreshLocalState()
     } catch (err) {
       setError(err.message)
@@ -177,12 +191,13 @@ export default function Devices() {
   async function handleUnbind(busid) {
     setMessage(`Unbinding ${busid}...`)
     try {
-      await requestJson('/api/usbip/unbind', {
+      await fetchJson('/api/usbip/unbind', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ busid })
       })
       setMessage(`Unbound ${busid}`)
+      setError(null)
       await refreshLocalState()
     } catch (err) {
       setError(err.message)
@@ -192,12 +207,13 @@ export default function Devices() {
   async function handleConnect(host, busid) {
     setMessage(`Connecting ${busid} from ${host}...`)
     try {
-      await requestJson('/api/usbip/connect', {
+      await fetchJson('/api/usbip/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host, busid })
       })
       setMessage(`Connected ${busid} from ${host}`)
+      setError(null)
       await refreshLocalState()
       await refreshRemoteHost(host)
     } catch (err) {
@@ -208,12 +224,13 @@ export default function Devices() {
   async function handleDisconnect(port) {
     setMessage(`Disconnecting port ${port}...`)
     try {
-      await requestJson('/api/usbip/disconnect', {
+      await fetchJson('/api/usbip/disconnect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ port })
       })
       setMessage(`Disconnected port ${port}`)
+      setError(null)
       await refreshLocalState()
     } catch (err) {
       setError(err.message)
@@ -225,6 +242,7 @@ export default function Devices() {
   return (
     <div className="page">
       <h2>USB/IP Devices <span className="refresh-dot">●</span></h2>
+      {loading && <div className="card">Loading USB/IP state...</div>}
       {error && <div className="alert">{error}</div>}
       {message && <div className="alert info">{message}</div>}
 

@@ -20,10 +20,20 @@ body {
 .app { max-width: 1200px; margin: 0 auto; padding: 16px; }
 
 header {
-  display: flex; align-items: center; gap: 24px;
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
   border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 20px;
 }
 header h1 { font-size: 1.4rem; white-space: nowrap; }
+
+.socket-status {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.socket-status strong {
+  color: var(--accent);
+  text-transform: capitalize;
+}
 
 nav { display: flex; gap: 12px; flex-wrap: wrap; }
 nav a {
@@ -53,6 +63,7 @@ button {
   transition: opacity 0.15s;
 }
 button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
 button.btn-danger { background: var(--red); color: #fff; }
 button.btn-danger:hover { opacity: 0.85; }
 

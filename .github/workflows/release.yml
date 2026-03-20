@@ -5,6 +5,15 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish a GitHub release when dispatching manually'
+        type: boolean
+        default: false
+      release_tag:
+        description: 'Release tag to publish when manually dispatching'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -76,7 +85,7 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish_release && inputs.release_tag != '')
     permissions:
       contents: write
 
@@ -90,6 +99,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
           files: |
             release-assets/**/*.tar.gz
             release-assets/**/*.sha256

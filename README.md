@@ -136,7 +136,7 @@ Workflow templates in `.github/workflows/`:
 Release notes:
 
 - Push a tag like `v0.1.0` to publish Linux, macOS, and Windows release archives automatically.
-- `workflow_dispatch` can be used to validate the release build without publishing a tag.
+- `workflow_dispatch` can be used to validate the release build without publishing, or to publish manually by setting `publish_release=true` and supplying a `release_tag`.
 - Each archive bundles the backend binary, `frontend/dist`, and docs so the release is self-contained.
 
 > Requires GitHub PAT/SSH key and runner registration token to activate.

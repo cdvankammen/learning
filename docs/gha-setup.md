@@ -18,7 +18,7 @@ Steps to push this repository to GitHub (recommended)
    cd /home/chris/Documents/usbip
    gh repo create <owner>/<repo> --private --source=. --push
 
-4. Verify workflows appear in the repo (Actions tab). CI workflows respond to push and pull requests, while `release.yml` publishes tag-based release assets for Linux, macOS, and Windows.
+4. Verify workflows appear in the repo (Actions tab). CI workflows respond to push and pull requests, while `release.yml` publishes tag-based release assets for Linux, macOS, and Windows. Manual dispatch can be used for release validation or, with a `release_tag`, manual publishing from the GitHub UI.
 
 If gh cannot create the repo due to token scopes, use the GitHub web UI to create the repository and then add the remote:
    git remote add origin https://github.com/<owner>/<repo>.git
