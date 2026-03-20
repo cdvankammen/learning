@@ -3,6 +3,7 @@ name: CI Full
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   backend:
