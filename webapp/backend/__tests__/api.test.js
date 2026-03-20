@@ -7,7 +7,7 @@ let app, server
 beforeAll(() => {
   // Override PORT to avoid conflict with running instance
   process.env.PORT = '0'
-  const backend = require('../webapp/backend/index.js')
+  const backend = require('../index.js')
   app = backend.app
   server = backend.server
 })

@@ -5,7 +5,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 API_URL="${API_URL:-http://127.0.0.1:3001}"
 
-RED='\033[0;31m'
+RED='\033[0;31m' # used in error messages below
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
@@ -40,12 +40,14 @@ EOF
 }
 
 api_get() {
-  curl -sf "${API_URL}${1}" 2>/dev/null || echo '{"error":"API not reachable"}'
+  curl -sf "${API_URL}${1}" 2>/dev/null || echo "{\"error\":\"API not reachable at ${API_URL}\"}"
 }
 
 api_post() {
   curl -sf -X POST -H 'Content-Type: application/json' -d "$2" "${API_URL}${1}" 2>/dev/null || echo '{"error":"API not reachable"}'
 }
+
+die() { echo -e "${RED}ERROR: $*${NC}" >&2; exit 1; }
 
 cmd_status() {
   echo -e "${CYAN}=== Platform Status ===${NC}"
@@ -147,7 +149,7 @@ case "${1:-help}" in
   devices)    cmd_devices ;;
   bind)       cmd_bind "${2:-}" ;;
   unbind)     cmd_unbind "${2:-}" ;;
-  health)     bash "$REPO_ROOT/modules/monitor/health-check.sh" ;;
+  health)     bash "$REPO_ROOT/modules/monitor/health-check.sh" || die "Health check failed" ;;
   prune)
     if [ "${2:-}" = "--exec" ]; then
       bash "$REPO_ROOT/modules/backup/prune-backups.sh" -k 10

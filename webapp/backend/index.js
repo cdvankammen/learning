@@ -1,10 +1,20 @@
 const express = require('express');
 const path = require('path');
 const { execSync, exec } = require('child_process');
+const rateLimit = require('express-rate-limit');
 const pkg = require('./package.json');
 const app = express();
 
 app.use(express.json());
+
+// Rate limiting — 100 requests per minute per IP
+const limiter = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+app.use('/api/', limiter);
+
+// Stricter limit on mutation endpoints
+const mutationLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: { error: 'Too many requests' } });
+app.use('/api/usbip/bind', mutationLimiter);
+app.use('/api/usbip/unbind', mutationLimiter);
 
 // Request logging middleware
 app.use((req, _res, next) => {

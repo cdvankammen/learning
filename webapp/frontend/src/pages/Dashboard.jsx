@@ -5,13 +5,18 @@ export default function Dashboard() {
   const [health, setHealth] = useState(null)
 
   useEffect(() => {
-    fetch('/api/system').then(r => r.json()).then(setSystem).catch(() => {})
-    fetch('/api/health').then(r => r.json()).then(setHealth).catch(() => {})
+    function fetchAll() {
+      fetch('/api/system').then(r => r.json()).then(setSystem).catch(() => {})
+      fetch('/api/health').then(r => r.json()).then(setHealth).catch(() => {})
+    }
+    fetchAll()
+    const interval = setInterval(fetchAll, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   return (
     <div className="page">
-      <h2>Dashboard</h2>
+      <h2>Dashboard <span className="refresh-dot">●</span></h2>
       {health && (
         <div className="card">
           <h3>Service Health</h3>

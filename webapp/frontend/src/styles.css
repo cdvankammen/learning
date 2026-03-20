@@ -67,3 +67,9 @@ button:hover { opacity: 0.85; }
 p { margin: 4px 0; }
 ul { padding-left: 20px; }
 
+.refresh-dot {
+  color: var(--green); font-size: 0.6rem; vertical-align: super;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
