@@ -125,7 +125,24 @@ if (frontendDist) {
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', version: pkg.version, uptime: process.uptime() });
+  const components = {
+    usbip: {
+      available: runUsbipSync(['list', '-l']) !== null,
+      binary: USBIP_BIN
+    },
+    proxmox: {
+      available: safeExecFile('pct', ['list']) !== null,
+      binary: 'pct'
+    },
+    backupDir: {
+      available: fs.existsSync('/var/lib/vz/dump')
+    },
+    settingsDir: {
+      available: fs.existsSync(CONFIG_DIR)
+    }
+  };
+
+  res.json({ status: 'ok', version: pkg.version, uptime: process.uptime(), components });
 });
 
 // ── LXC endpoints ──────────────────────────────────────────

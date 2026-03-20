@@ -24,6 +24,9 @@ describe('GET /api/health', () => {
     expect(res.body.status).toBe('ok')
     expect(res.body).toHaveProperty('version')
     expect(res.body).toHaveProperty('uptime')
+    expect(res.body).toHaveProperty('components')
+    expect(res.body.components).toHaveProperty('usbip')
+    expect(res.body.components).toHaveProperty('proxmox')
   })
 })
 
