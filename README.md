@@ -64,6 +64,8 @@ API_URL=http://192.168.1.25:3001 bin/usbip-ctl devices
 API_URL=http://192.168.1.25:3001 bin/usbip-ctl connect 192.168.1.30 1-2
 ```
 
+You can also persist those defaults in `~/.usbip/config` as `KEY=VALUE` pairs. Supported keys include `API_URL`, `USBIP_SERVICE_NAME`, `USBIP_SERVICE_MANAGER`, `USBIP_MDNS_SERVICE_TYPE`, `USBIP_MDNS_PID_FILE`, and `USBIP_MDNS_LOG_FILE`. Set `USBIP_CLI_CONFIG_FILE` if you want the CLI to read a different file.
+
 For local service control, use the `up`, `down`, `restart`, and `service status` commands:
 
 ```bash

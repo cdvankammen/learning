@@ -3,12 +3,58 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+CLI_CONFIG_FILE="${USBIP_CLI_CONFIG_FILE:-$HOME/.usbip/config}"
+
+API_URL="${API_URL:-}"
+SERVICE_NAME="${USBIP_SERVICE_NAME:-}"
+SERVICE_MANAGER="${USBIP_SERVICE_MANAGER:-}"
+MDNS_SERVICE_TYPE="${USBIP_MDNS_SERVICE_TYPE:-}"
+MDNS_PID_FILE="${USBIP_MDNS_PID_FILE:-}"
+MDNS_LOG_FILE="${USBIP_MDNS_LOG_FILE:-}"
+
+load_cli_config() {
+  [ -r "$CLI_CONFIG_FILE" ] || return 0
+
+  while IFS= read -r line; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+
+    local key value
+    key="${line%%=*}"
+    value="${line#*=}"
+
+    case "$key" in
+      API_URL)
+        [ -n "$API_URL" ] || API_URL="$value"
+        ;;
+      USBIP_SERVICE_NAME)
+        [ -n "$SERVICE_NAME" ] || SERVICE_NAME="$value"
+        ;;
+      USBIP_SERVICE_MANAGER)
+        [ -n "$SERVICE_MANAGER" ] || SERVICE_MANAGER="$value"
+        ;;
+      USBIP_MDNS_SERVICE_TYPE)
+        [ -n "$MDNS_SERVICE_TYPE" ] || MDNS_SERVICE_TYPE="$value"
+        ;;
+      USBIP_MDNS_PID_FILE)
+        [ -n "$MDNS_PID_FILE" ] || MDNS_PID_FILE="$value"
+        ;;
+      USBIP_MDNS_LOG_FILE)
+        [ -n "$MDNS_LOG_FILE" ] || MDNS_LOG_FILE="$value"
+        ;;
+    esac
+  done < "$CLI_CONFIG_FILE"
+}
+
+load_cli_config
+
 API_URL="${API_URL:-http://127.0.0.1:3001}"
-SERVICE_NAME="${USBIP_SERVICE_NAME:-usbip-web}"
-SERVICE_MANAGER="${USBIP_SERVICE_MANAGER:-systemctl}"
-MDNS_SERVICE_TYPE="${USBIP_MDNS_SERVICE_TYPE:-_usbipcentral._tcp}"
-MDNS_PID_FILE="${USBIP_MDNS_PID_FILE:-/tmp/usbip-mdns-announce.pid}"
-MDNS_LOG_FILE="${USBIP_MDNS_LOG_FILE:-/tmp/usbip-mdns-announce.log}"
+SERVICE_NAME="${SERVICE_NAME:-usbip-web}"
+SERVICE_MANAGER="${SERVICE_MANAGER:-systemctl}"
+MDNS_SERVICE_TYPE="${MDNS_SERVICE_TYPE:-_usbipcentral._tcp}"
+MDNS_PID_FILE="${MDNS_PID_FILE:-/tmp/usbip-mdns-announce.pid}"
+MDNS_LOG_FILE="${MDNS_LOG_FILE:-/tmp/usbip-mdns-announce.log}"
 
 RED='\033[0;31m' # used in error messages below
 GREEN='\033[0;32m'
@@ -50,7 +96,8 @@ ${YELLOW}Commands:${NC}
   ${GREEN}cron${NC}            Install cron jobs (dry-run)
   ${GREEN}help${NC}            Show this help
 
-Set ${CYAN}API_URL${NC} to any node's `/api` base URL to control that node directly from the terminal.
+Set ${CYAN}API_URL${NC} to any node's /api base URL to control that node directly from the terminal.
+You can also create ${CYAN}~/.usbip/config${NC} with KEY=VALUE pairs to persist defaults.
 EOF
   exit 0
 }
