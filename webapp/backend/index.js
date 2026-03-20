@@ -113,9 +113,44 @@ function validateVmid(id) {
   return /^\d{1,5}$/.test(id);
 }
 
+const DUMP_DIR = '/var/lib/vz/dump';
+function isBackupRecent(vmid, hours = 4) {
+  try {
+    if (!fs.existsSync(DUMP_DIR)) return false;
+    const files = fs.readdirSync(DUMP_DIR).filter(f => f.includes(`-${vmid}-`) || f.includes(`${vmid}`));
+    let latest = null;
+    for (const f of files) {
+      const st = fs.statSync(path.join(DUMP_DIR, f));
+      if (!latest || st.mtime > latest) latest = st.mtime;
+    }
+    if (!latest) return false;
+    const ageMs = Date.now() - new Date(latest).getTime();
+    return ageMs <= hours * 3600 * 1000;
+  } catch (e) {
+    return false;
+  }
+}
+
+function triggerBackup(vmid, cb) {
+  const snapshotCmd = `vzdump ${vmid} --dumpdir ${DUMP_DIR} --compress zstd --mode snapshot`;
+  exec(snapshotCmd, { timeout: 600000 }, (err, stdout, stderr) => {
+    if (err) {
+      const stopCmd = `vzdump ${vmid} --dumpdir ${DUMP_DIR} --compress zstd --mode stop`;
+      exec(stopCmd, { timeout: 600000 }, (err2, stdout2, stderr2) => {
+        if (err2) return cb(err2, null);
+        return cb(null, { mode: 'stop', output: stdout2 });
+      });
+      return;
+    }
+    cb(null, { mode: 'snapshot', output: stdout });
+  });
+}
+
 app.post('/api/lxc/:id/start', (req, res) => {
   const id = req.params.id;
   if (!validateVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
+  const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
+  if (dryRun) return res.json({ ok: true, vmid: id, action: 'start', dryRun: true, message: 'Simulated start' });
   exec(`pct start ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
     if (err) return res.status(500).json({ error: stderr || err.message });
     res.json({ ok: true, vmid: id, action: 'started', output: stdout });
@@ -125,26 +160,38 @@ app.post('/api/lxc/:id/start', (req, res) => {
 app.post('/api/lxc/:id/stop', (req, res) => {
   const id = req.params.id;
   if (!validateVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
-  exec(`pct stop ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
-    res.json({ ok: true, vmid: id, action: 'stopped', output: stdout });
-  });
+  const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
+  if (dryRun) {
+    const recent = isBackupRecent(id, 4);
+    return res.json({ ok: true, vmid: id, action: 'stop', dryRun: true, backupRecent: recent });
+  }
+
+  // ensure recent backup before destructive change
+  if (!isBackupRecent(id, 4)) {
+    triggerBackup(id, (err, result) => {
+      if (err) return res.status(500).json({ error: 'backup failed before stop', details: err.message || String(err) });
+      exec(`pct stop ${id}`, { timeout: 30000 }, (err2, stdout2, stderr2) => {
+        if (err2) return res.status(500).json({ error: stderr2 || err2.message });
+        res.json({ ok: true, vmid: id, action: 'stopped', backup: result, output: stdout2 });
+      });
+    });
+  } else {
+    exec(`pct stop ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
+      if (err) return res.status(500).json({ error: stderr || err.message });
+      res.json({ ok: true, vmid: id, action: 'stopped', output: stdout });
+    });
+  }
 });
 
 // ── Backup trigger ─────────────────────────────────────────
 app.post('/api/backups/trigger/:vmid', (req, res) => {
   const vmid = req.params.vmid;
   if (!validateVmid(vmid)) return res.status(400).json({ error: 'invalid vmid' });
-  exec(`vzdump ${vmid} --dumpdir /var/lib/vz/dump --compress zstd --mode snapshot`, { timeout: 600000 }, (err, stdout, stderr) => {
-    if (err) {
-      // Fallback to stop mode
-      exec(`vzdump ${vmid} --dumpdir /var/lib/vz/dump --compress zstd --mode stop`, { timeout: 600000 }, (err2, stdout2, stderr2) => {
-        if (err2) return res.status(500).json({ error: stderr2 || err2.message });
-        res.json({ ok: true, vmid, mode: 'stop', output: stdout2 });
-      });
-      return;
-    }
-    res.json({ ok: true, vmid, mode: 'snapshot', output: stdout });
+  const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
+  if (dryRun) return res.json({ ok: true, vmid, dryRun: true, message: 'Would trigger backup (dry-run)' });
+  triggerBackup(vmid, (err, result) => {
+    if (err) return res.status(500).json({ error: 'backup failed', details: err.message || String(err) });
+    res.json(Object.assign({ ok: true, vmid }, result));
   });
 });
 
