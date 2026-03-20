@@ -3,9 +3,16 @@
 set -euo pipefail
 
 CRON_SCHEDULE="${CRON_SCHEDULE:-0 */4 * * *}"
-BACKUP_SCRIPT="/usbip/repo/tools/backup-500-range.sh"
-PRUNE_SCRIPT="/usbip/repo/modules/backup/prune-backups.sh"
-HEALTH_SCRIPT="/usbip/repo/modules/monitor/health-check.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "${USBIP_REPO_ROOT:-}" ]; then
+  REPO_ROOT="$USBIP_REPO_ROOT"
+else
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
+BACKUP_SCRIPT="$REPO_ROOT/tools/backup-500-range.sh"
+PRUNE_SCRIPT="$REPO_ROOT/modules/backup/prune-backups.sh"
+HEALTH_SCRIPT="$REPO_ROOT/modules/monitor/health-check.sh"
 CRON_FILE="/etc/cron.d/usbip-backups"
 DRY_RUN="${DRY_RUN:-1}"
 

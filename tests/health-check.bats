@@ -2,6 +2,7 @@
 # tests/health-check.bats — unit tests for health-check.sh
 
 setup() {
+  REPO_ROOT="${USBIP_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/.." && pwd)}"
   export TMPDIR
   TMPDIR="$(mktemp -d)"
   DUMP="$TMPDIR/dump"
@@ -22,7 +23,7 @@ WRAPPER
   {
     echo "LOG=\"$LOG\""
     echo "DUMP_DIR=\"$DUMP\""
-    sed '1d; /^LOG=/d; /^DUMP_DIR=/d' /usbip/repo/modules/monitor/health-check.sh
+    sed '1d; /^LOG=/d; /^DUMP_DIR=/d' "$REPO_ROOT/modules/monitor/health-check.sh"
   } >> "$TMPDIR/hc.sh"
   chmod +x "$TMPDIR/hc.sh"
   "$TMPDIR/hc.sh"

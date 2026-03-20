@@ -2,6 +2,7 @@
 # tests/prune-backups.bats — unit tests for prune-backups.sh
 
 setup() {
+  REPO_ROOT="${USBIP_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/.." && pwd)}"
   export TMPDIR
   TMPDIR="$(mktemp -d)"
   DUMP="$TMPDIR/dump"
@@ -37,7 +38,7 @@ WRAPPER
   {
     echo "LOG=\"$LOG\""
     echo "DUMP_DIR=\"$DUMP_DIR\""
-    sed '1d; /^LOG=/d; /^DUMP_DIR=/d' /usbip/repo/modules/backup/prune-backups.sh
+    sed '1d; /^LOG=/d; /^DUMP_DIR=/d' "$REPO_ROOT/modules/backup/prune-backups.sh"
   } >> "$TMPDIR/run.sh"
   chmod +x "$TMPDIR/run.sh"
   "$TMPDIR/run.sh" "$@"

@@ -8,16 +8,16 @@ Prereqs:
 
 Steps:
 1. Prepare runner files (already downloaded by tools/setup-self-hosted-runner.sh):
-   sudo /usbip/repo/tools/setup-self-hosted-runner.sh --url https://github.com/yourorg/yourrepo --name usbip-runner
+   sudo /home/chris/Documents/usbip/tools/setup-self-hosted-runner.sh --url https://github.com/yourorg/yourrepo --name usbip-runner
    This will place the runner bits in /opt/actions-runner and write a helper at /usbip/session-files/runner-register.sh
 
 2. Register the runner (one-time, requires token):
-   sudo /opt/actions-runner/bin/./run.sh --unattended --url https://github.com/yourorg/yourrepo --token <TOKEN> --name usbip-runner
+   sudo bash -c 'cd /opt/actions-runner && ./config.sh --url https://github.com/yourorg/yourrepo --token <TOKEN> --name usbip-runner --labels self-hosted,proxmox --unattended'
    OR use the helper:
-   /usbip/session-files/runner-register.sh 'https://github.com/yourorg/yourrepo' <TOKEN> usbip-runner
+   sudo /usbip/session-files/runner-register.sh 'https://github.com/yourorg/yourrepo' <TOKEN> usbip-runner
 
 3. Install service (post-registration):
-   sudo /usbip/repo/tools/install-runner-service.sh --dir /opt/actions-runner --name usbip-runner
+   sudo /home/chris/Documents/usbip/tools/install-runner-service.sh --dir /opt/actions-runner --name usbip-runner
    This will create a systemd unit that starts the runner.
 
 Notes:

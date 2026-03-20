@@ -3,6 +3,12 @@ set -euo pipefail
 
 LOG=/usbip/session-files/integration-smoke.log
 mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "${USBIP_REPO_ROOT:-}" ]; then
+  REPO_ROOT="$USBIP_REPO_ROOT"
+else
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 
 echo "Integration smoke run at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
 
@@ -45,18 +51,18 @@ echo "Using template: ${TEMPLATE}" >> "$LOG"
 # Run provisioning script in dry-run unless RUN_ACTUAL=1
 if [ "$RUN_ACTUAL" -eq 1 ]; then
   echo "Creating actual LXC $FREE from $TEMPLATE" >> "$LOG"
-  /usbip/repo/modules/lxc-provision/create-lxc-defaults.sh -i "$FREE" -h "smoke-test-$FREE" >> "$LOG" 2>&1 || { echo "pct create failed" >> "$LOG"; exit 1; }
+  "$REPO_ROOT/modules/lxc-provision/create-lxc-defaults.sh" -i "$FREE" -h "smoke-test-$FREE" >> "$LOG" 2>&1 || { echo "pct create failed" >> "$LOG"; exit 1; }
   CREATED=1
 else
   echo "DRY-RUN: create-lxc-defaults.sh -n -i $FREE -h smoke-test-$FREE" >> "$LOG"
-  /usbip/repo/modules/lxc-provision/create-lxc-defaults.sh -n -i "$FREE" -h "smoke-test-$FREE" >> "$LOG" 2>&1 || echo "DRY-RUN returned non-zero" >> "$LOG"
+  "$REPO_ROOT/modules/lxc-provision/create-lxc-defaults.sh" -n -i "$FREE" -h "smoke-test-$FREE" >> "$LOG" 2>&1 || echo "DRY-RUN returned non-zero" >> "$LOG"
   CREATED=0
 fi
 
 # If created actually, run network validation, backup, and optional cleanup
 if [ "$CREATED" -eq 1 ]; then
   sleep 3
-  /usbip/repo/modules/network/validate-network.sh "$FREE" >> "$LOG" 2>&1 || echo "validate-network failed" >> "$LOG"
+  "$REPO_ROOT/modules/network/validate-network.sh" "$FREE" >> "$LOG" 2>&1 || echo "validate-network failed" >> "$LOG"
 
   if command -v vzdump >/dev/null 2>&1; then
     echo "Backing up smoke LXC $FREE" >> "$LOG"

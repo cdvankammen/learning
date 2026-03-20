@@ -5,7 +5,7 @@ A comprehensive platform for managing Proxmox LXC containers and USB/IP device s
 ## Architecture
 
 ```
-/usbip/repo/
+ /home/chris/Documents/usbip/
 ├── webapp/
 │   ├── frontend/          # Vite + React SPA (Dashboard, Containers, Devices, Backups, Settings)
 │   └── backend/           # Express + Socket.IO API server
@@ -21,6 +21,7 @@ A comprehensive platform for managing Proxmox LXC containers and USB/IP device s
 │   ├── offload-archives.sh       # S3 offload (dry-run default)
 │   ├── ensure-no-secrets.sh      # Secret scanning
 │   ├── harden-scripts.sh         # Script hardening checks
+│   ├── package-release.sh        # Cross-platform release packaging helper
 │   ├── release-draft.sh          # GitHub release draft generator
 │   └── push-to-remote.sh         # Git push helper (SSH/HTTPS)
 ├── tests/                 # BATS shell tests (prune, health, restore)
@@ -84,12 +85,29 @@ make secrets-scan  # Scan for leaked secrets
 
 ## USB/IP Device Management
 
-The platform wraps the Linux `usbip` CLI tools:
+The platform wraps the USB/IP CLI tools and can act as both exporter and importer at the same time:
 
 - **Server-side**: Bind/unbind local USB devices for network sharing
 - **Client-side**: Connect to/disconnect from remote USB devices
-- **Web UI**: Manage devices from the Devices page in the dashboard
+- **Bidirectional**: One host can share local devices while simultaneously consuming devices from another host
+- **Web UI**: Manage unlimited remote peers from the Devices page in the dashboard
 - **Shell helpers**: Source `modules/usbip/usbip-helpers.sh` for scripting
+
+The backend exposes the following USB/IP endpoints:
+
+- `GET /api/usbip/devices` for local exporters
+- `GET /api/usbip/remote/:host/devices` for peer exports
+- `GET /api/usbip/ports` for imported devices
+- `POST /api/usbip/bind`, `POST /api/usbip/unbind`
+- `POST /api/usbip/connect`, `POST /api/usbip/disconnect`
+
+There is no application-level peer cap; limits are driven by the host and the USB/IP daemon.
+
+Useful environment overrides:
+
+- `USBIP_FRONTEND_DIR` points the backend at a packaged frontend bundle when running from a release archive.
+- `USBIP_BIN` selects the USB/IP command if the default (`usbip` on Unix, `usbipd` on Windows) is not the right one for the host.
+- `USBIP_API_RATE_LIMIT` and `USBIP_MUTATION_RATE_LIMIT` can be raised when you need to poll or manage many peers.
 
 ## Testing
 
@@ -113,7 +131,13 @@ Workflow templates in `.github/workflows/`:
 - **ci-frontend.yml**: Lint + build frontend
 - **ci-full.yml**: Full backend + frontend build + test
 - **e2e.yml**: Playwright E2E suite
-- **release.yml**: Build artifacts + create GitHub release
+- **release.yml**: Tag-triggered multi-platform release assets + checksums
+
+Release notes:
+
+- Push a tag like `v0.1.0` to publish Linux, macOS, and Windows release archives automatically.
+- `workflow_dispatch` can be used to validate the release build without publishing a tag.
+- Each archive bundles the backend binary, `frontend/dist`, and docs so the release is self-contained.
 
 > Requires GitHub PAT/SSH key and runner registration token to activate.
 
@@ -123,4 +147,3 @@ Workflow templates in `.github/workflows/`:
 - `tools/harden-scripts.sh` — enforces safe permissions and patterns
 - All offload/prune/cron scripts default to **dry-run mode**
 - Never deletes host files outside LXC dump directory
-

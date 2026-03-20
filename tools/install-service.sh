@@ -2,7 +2,14 @@
 # tools/install-service.sh — install the usbip-web systemd service
 set -euo pipefail
 
-SERVICE_SRC="/usbip/repo/templates/usbip-web.service"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "${USBIP_REPO_ROOT:-}" ]; then
+  REPO_ROOT="$USBIP_REPO_ROOT"
+else
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
+SERVICE_SRC="$REPO_ROOT/templates/usbip-web.service"
 SERVICE_DST="/etc/systemd/system/usbip-web.service"
 DRY_RUN="${DRY_RUN:-1}"
 

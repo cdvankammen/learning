@@ -6,6 +6,13 @@ REMOTE=""
 AUTH=""
 SSH_KEY_FILE=""
 HTTPS_TOKEN=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "${USBIP_REPO_ROOT:-}" ]; then
+  REPO_ROOT="$USBIP_REPO_ROOT"
+else
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
 while [ $# -gt 0 ]; do
   case "$1" in
     --remote-url) REMOTE="$2"; shift 2;;
@@ -16,7 +23,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 if [ -z "$REMOTE" ] || [ -z "$AUTH" ]; then usage; fi
-cd /usbip/repo || exit 1
+cd "$REPO_ROOT" || exit 1
 git remote remove origin 2>/dev/null || true
 if [ "$AUTH" = "ssh_private_key" ]; then
   if [ -z "$SSH_KEY_FILE" ]; then echo "SSH key file required"; exit 1; fi

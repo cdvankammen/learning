@@ -1,20 +1,32 @@
 const express = require('express');
 const path = require('path');
-const { execSync, exec } = require('child_process');
+const { execSync, exec, execFile, execFileSync } = require('child_process');
 const rateLimit = require('express-rate-limit');
 const pkg = require('./package.json');
 const app = express();
+const fs = require('fs');
 
 app.use(express.json());
 
 // Rate limiting — 100 requests per minute per IP
-const limiter = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+const API_RATE_LIMIT = Number(process.env.USBIP_API_RATE_LIMIT || 1000);
+const MUTATION_RATE_LIMIT = Number(process.env.USBIP_MUTATION_RATE_LIMIT || 60);
+const USBIP_BIN = process.env.USBIP_BIN || (process.platform === 'win32' ? 'usbipd' : 'usbip');
+const limiter = rateLimit({ windowMs: 60 * 1000, max: API_RATE_LIMIT, standardHeaders: true, legacyHeaders: false });
 app.use('/api/', limiter);
 
 // Stricter limit on mutation endpoints
-const mutationLimiter = rateLimit({ windowMs: 60 * 1000, max: 10, message: { error: 'Too many requests' } });
+const mutationLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: MUTATION_RATE_LIMIT,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests' }
+});
 app.use('/api/usbip/bind', mutationLimiter);
 app.use('/api/usbip/unbind', mutationLimiter);
+app.use('/api/usbip/connect', mutationLimiter);
+app.use('/api/usbip/disconnect', mutationLimiter);
 
 // Request logging middleware
 app.use((req, _res, next) => {
@@ -24,9 +36,21 @@ app.use((req, _res, next) => {
 });
 
 // Serve built frontend if available
-const frontendDist = path.join(__dirname, '..', 'frontend', 'dist');
-const fs = require('fs');
-if (fs.existsSync(frontendDist)) {
+function resolveFrontendDist() {
+  const candidates = [];
+  if (process.env.USBIP_FRONTEND_DIR) candidates.push(process.env.USBIP_FRONTEND_DIR);
+  if (process.pkg) candidates.push(path.join(path.dirname(process.execPath), 'frontend', 'dist'));
+  candidates.push(path.join(__dirname, '..', 'frontend', 'dist'));
+  candidates.push(path.join(process.cwd(), 'frontend', 'dist'));
+  candidates.push(path.join(process.cwd(), 'webapp', 'frontend', 'dist'));
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+const frontendDist = resolveFrontendDist();
+if (frontendDist) {
   app.use(express.static(frontendDist));
 }
 
@@ -36,13 +60,79 @@ app.get('/api/health', (_req, res) => {
 });
 
 // ── LXC endpoints ──────────────────────────────────────────
-function safeExec(cmd) {
-  try { return execSync(cmd, { timeout: 15000 }).toString().trim(); }
-  catch { return null; }
+function safeExecFile(bin, args) {
+  try {
+    return execFileSync(bin, args, { timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return null;
+  }
+}
+
+function runUsbipSync(args) {
+  try {
+    return execFileSync(USBIP_BIN, args, { timeout: 15000 }).toString().trim();
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return null;
+    if (err && err.stdout && err.stdout.toString().trim()) return err.stdout.toString().trim();
+    return null;
+  }
+}
+
+function runUsbip(args, cb) {
+  execFile(USBIP_BIN, args, { timeout: 10000 }, cb);
+}
+
+function isDryRun(req) {
+  return req.get('x-dry-run') === '1' || req.query.dry_run === '1';
+}
+
+function validateHost(host) {
+  return typeof host === 'string' && /^[A-Za-z0-9._:%\-\[\]]{1,255}$/.test(host);
+}
+
+function validateBusid(busid) {
+  return typeof busid === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(busid);
+}
+
+function validatePort(port) {
+  return typeof port === 'string' && /^\d{1,5}$/.test(port);
+}
+
+function parseUsbipDevices(raw) {
+  const devices = [];
+  const seen = new Set();
+  const lines = (raw || '').split(/\r?\n/);
+  for (const line of lines) {
+    let match = line.match(/^\s*-\s*busid\s+([A-Za-z0-9._:-]+)\s+\((.+)\)\s*$/i);
+    if (!match) {
+      match = line.match(/^\s*([A-Za-z0-9._:-]+):\s*(.+)\s+\((.+)\)\s*$/);
+    }
+    if (!match) continue;
+    const busid = match[1];
+    if (seen.has(busid)) continue;
+    seen.add(busid);
+    devices.push({ busid, description: (match[2] || '').trim() });
+  }
+  return devices;
+}
+
+function parseUsbipPorts(raw) {
+  const ports = [];
+  const lines = (raw || '').split(/\r?\n/);
+  for (const line of lines) {
+    const match = line.match(/^\s*Port\s+(\d+):\s*(.+)$/i);
+    if (!match) continue;
+    ports.push({ port: match[1], description: match[2].trim() });
+  }
+  return ports;
+}
+
+function respondDryRun(res, payload) {
+  res.json(Object.assign({ ok: true, dryRun: true }, payload));
 }
 
 app.get('/api/lxc/list', (_req, res) => {
-  const raw = safeExec('pct list 2>/dev/null');
+  const raw = safeExecFile('pct', ['list']);
   if (!raw) return res.json({ containers: [], error: 'pct not available' });
   const lines = raw.split('\n').slice(1);
   const containers = lines.map(l => {
@@ -54,7 +144,7 @@ app.get('/api/lxc/list', (_req, res) => {
 
 app.get('/api/lxc/:id/status', (req, res) => {
   const id = req.params.id.replace(/[^0-9]/g, '');
-  const raw = safeExec(`pct status ${id} 2>/dev/null`);
+  const raw = safeExecFile('pct', ['status', id]);
   if (!raw) return res.json({ vmid: id, error: 'not found or pct unavailable' });
   res.json({ vmid: id, raw });
 });
@@ -79,21 +169,44 @@ app.get('/api/backups', (_req, res) => {
 
 // ── USB/IP endpoints ───────────────────────────────────────
 app.get('/api/usbip/devices', (_req, res) => {
-  const raw = safeExec('usbip list -l 2>/dev/null');
-  if (!raw) return res.json({ devices: [], error: 'usbip not available' });
-  const devices = [];
-  const lines = raw.split('\n');
-  for (const line of lines) {
-    const m = line.match(/busid\s+(\S+)\s+\((.+)\)/);
-    if (m) devices.push({ busid: m[1], description: m[2] });
-  }
-  res.json({ devices });
+  const raw = runUsbipSync(['list', '-l']);
+  if (!raw) return res.json({ devices: [], raw: '', error: 'usbip not available' });
+  res.json({ devices: parseUsbipDevices(raw), raw });
+});
+
+app.get('/api/usbip/capabilities', (_req, res) => {
+  res.json({
+    server: true,
+    client: true,
+    simultaneous: true,
+    unlimitedPeers: true,
+    unlimitedDevices: true,
+    peerLimit: null,
+    deviceLimit: null,
+    apiRateLimit: API_RATE_LIMIT,
+    mutationRateLimit: MUTATION_RATE_LIMIT
+  });
+});
+
+app.get('/api/usbip/ports', (_req, res) => {
+  const raw = runUsbipSync(['port']);
+  if (!raw) return res.json({ ports: [], raw: '', error: 'usbip not available' });
+  res.json({ ports: parseUsbipPorts(raw), raw });
+});
+
+app.get('/api/usbip/remote/:host/devices', (req, res) => {
+  const host = req.params.host;
+  if (!validateHost(host)) return res.status(400).json({ error: 'invalid host' });
+  const raw = runUsbipSync(['list', '-r', host]);
+  if (!raw) return res.json({ host, devices: [], raw: '', error: 'usbip not available or host unreachable' });
+  res.json({ host, devices: parseUsbipDevices(raw), raw });
 });
 
 app.post('/api/usbip/bind', (req, res) => {
   const { busid } = req.body;
-  if (!busid || !/^[0-9a-f:.-]+$/i.test(busid)) return res.status(400).json({ error: 'invalid busid' });
-  exec(`usbip bind -b ${busid}`, { timeout: 10000 }, (err, stdout, stderr) => {
+  if (!validateBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
+  if (isDryRun(req)) return respondDryRun(res, { busid, action: 'bind', command: `usbip bind -b ${busid}` });
+  runUsbip(['bind', '-b', busid], (err, stdout, stderr) => {
     if (err) return res.status(500).json({ error: stderr || err.message });
     res.json({ ok: true, output: stdout });
   });
@@ -101,10 +214,45 @@ app.post('/api/usbip/bind', (req, res) => {
 
 app.post('/api/usbip/unbind', (req, res) => {
   const { busid } = req.body;
-  if (!busid || !/^[0-9a-f:.-]+$/i.test(busid)) return res.status(400).json({ error: 'invalid busid' });
-  exec(`usbip unbind -b ${busid}`, { timeout: 10000 }, (err, stdout, stderr) => {
+  if (!validateBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
+  if (isDryRun(req)) return respondDryRun(res, { busid, action: 'unbind', command: `usbip unbind -b ${busid}` });
+  runUsbip(['unbind', '-b', busid], (err, stdout, stderr) => {
     if (err) return res.status(500).json({ error: stderr || err.message });
     res.json({ ok: true, output: stdout });
+  });
+});
+
+app.post('/api/usbip/connect', (req, res) => {
+  const { host, busid } = req.body;
+  if (!validateHost(host)) return res.status(400).json({ error: 'invalid host' });
+  if (!validateBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
+  if (isDryRun(req)) {
+    return respondDryRun(res, {
+      host,
+      busid,
+      action: 'connect',
+      command: `usbip attach -r ${host} -b ${busid}`
+    });
+  }
+  runUsbip(['attach', '-r', host, '-b', busid], (err, stdout, stderr) => {
+    if (err) return res.status(500).json({ error: stderr || err.message });
+    res.json({ ok: true, host, busid, output: stdout });
+  });
+});
+
+app.post('/api/usbip/disconnect', (req, res) => {
+  const { port } = req.body;
+  if (!validatePort(port)) return res.status(400).json({ error: 'invalid port' });
+  if (isDryRun(req)) {
+    return respondDryRun(res, {
+      port,
+      action: 'disconnect',
+      command: `usbip detach -p ${port}`
+    });
+  }
+  runUsbip(['detach', '-p', port], (err, stdout, stderr) => {
+    if (err) return res.status(500).json({ error: stderr || err.message });
+    res.json({ ok: true, port, output: stdout });
   });
 });
 
@@ -232,4 +380,3 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 module.exports = { app, server };
-

@@ -2,6 +2,7 @@
 # tests/restore-or-replace.bats — dry-run tests for restore-or-replace.sh
 
 setup() {
+  REPO_ROOT="${USBIP_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/.." && pwd)}"
   export TMPDIR
   TMPDIR="$(mktemp -d)"
   DUMP="$TMPDIR/dump"
@@ -24,7 +25,7 @@ WRAPPER
   {
     echo "LOG=\"$LOG\""
     # Override the /etc/pve/lxc path check by patching the conf directory
-    sed '1d; /^LOG=/d' /usbip/repo/modules/lxc-restore/restore-or-replace.sh |
+    sed '1d; /^LOG=/d' "$REPO_ROOT/modules/lxc-restore/restore-or-replace.sh" |
       sed "s|/etc/pve/lxc|$CONF|g" |
       sed "s|/var/lib/vz/dump|$DUMP|g"
   } >> "$TMPDIR/rr.sh"

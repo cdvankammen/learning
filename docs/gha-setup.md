@@ -18,7 +18,7 @@ Steps to push this repository to GitHub (recommended)
    cd /home/chris/Documents/usbip
    gh repo create <owner>/<repo> --private --source=. --push
 
-4. Verify workflows appear in the repo (Actions tab). Some workflows in this repo respond to push, and E2E supports manual dispatch.
+4. Verify workflows appear in the repo (Actions tab). CI workflows respond to push and pull requests, while `release.yml` publishes tag-based release assets for Linux, macOS, and Windows.
 
 If gh cannot create the repo due to token scopes, use the GitHub web UI to create the repository and then add the remote:
    git remote add origin https://github.com/<owner>/<repo>.git
@@ -33,11 +33,10 @@ Registering a self-hosted runner (optional)
 4. Start the runner as a service (./svc.sh install; ./svc.sh start)
 
 Notes & next steps
-- The repository already contains workflows under .github/workflows. The frontend workflow was updated to be reusable (workflow_call + workflow_dispatch).
+- The repository already contains workflows under `.github/workflows`. The frontend workflow is reusable (`workflow_call` + `workflow_dispatch`) and the release workflow publishes self-contained platform archives on tag pushes.
 - If you want the agent to proceed to create the repo and enable Actions and/or register the runner, provide a PAT with the required scopes or confirm you will add the SSH public key to your GitHub account.
 - For security, create the PAT on a secure machine and paste it only when needed. Do NOT email tokens.
 
 Troubleshooting
 - If gh reports "Resource not accessible by personal access token", the PAT lacks the necessary scopes.
 - If Actions fail in the UI, open the workflow run to see logs; we can update the workflow to increase timeouts or adapt Node versions.
-

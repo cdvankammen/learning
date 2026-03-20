@@ -62,6 +62,34 @@ describe('GET /api/usbip/devices', () => {
   })
 })
 
+describe('GET /api/usbip/capabilities', () => {
+  test('reports simultaneous server and client support', async () => {
+    const res = await request(app).get('/api/usbip/capabilities')
+    expect(res.status).toBe(200)
+    expect(res.body.server).toBe(true)
+    expect(res.body.client).toBe(true)
+    expect(res.body.simultaneous).toBe(true)
+    expect(res.body.unlimitedPeers).toBe(true)
+    expect(res.body.unlimitedDevices).toBe(true)
+  })
+})
+
+describe('GET /api/usbip/ports', () => {
+  test('returns ports array', async () => {
+    const res = await request(app).get('/api/usbip/ports')
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body.ports)).toBe(true)
+  })
+})
+
+describe('GET /api/usbip/remote/:host/devices', () => {
+  test('rejects invalid host', async () => {
+    const res = await request(app).get('/api/usbip/remote/bad!host/devices')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/invalid/)
+  })
+})
+
 describe('POST /api/usbip/bind', () => {
   test('rejects invalid busid', async () => {
     const res = await request(app)
@@ -84,6 +112,44 @@ describe('POST /api/usbip/unbind', () => {
     const res = await request(app)
       .post('/api/usbip/unbind')
       .send({})
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/usbip/connect', () => {
+  test('dry-run connect returns simulated response', async () => {
+    const res = await request(app)
+      .post('/api/usbip/connect')
+      .set('x-dry-run', '1')
+      .send({ host: '192.168.1.10', busid: '1-1' })
+    expect(res.status).toBe(200)
+    expect(res.body.dryRun).toBe(true)
+    expect(res.body.command).toMatch(/usbip attach/)
+  })
+
+  test('rejects invalid host', async () => {
+    const res = await request(app)
+      .post('/api/usbip/connect')
+      .send({ host: '../bad', busid: '1-1' })
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/usbip/disconnect', () => {
+  test('dry-run disconnect returns simulated response', async () => {
+    const res = await request(app)
+      .post('/api/usbip/disconnect')
+      .set('x-dry-run', '1')
+      .send({ port: '4' })
+    expect(res.status).toBe(200)
+    expect(res.body.dryRun).toBe(true)
+    expect(res.body.command).toMatch(/usbip detach/)
+  })
+
+  test('rejects invalid port', async () => {
+    const res = await request(app)
+      .post('/api/usbip/disconnect')
+      .send({ port: 'abc' })
     expect(res.status).toBe(400)
   })
 })

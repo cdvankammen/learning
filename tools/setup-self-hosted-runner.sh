@@ -34,6 +34,7 @@ if [[ -z "$REPO_URL" ]]; then
 fi
 
 mkdir -p "$OUTDIR"
+mkdir -p /usbip/session-files
 cd "$OUTDIR"
 
 ARCHIVE_URL="https://github.com/actions/runner/releases/latest/download/actions-runner-linux-x64.tar.gz"
@@ -53,9 +54,13 @@ if [ -f actions-runner.tar.gz ]; then
 fi
 
 # Write helper registration script (requires user-provided token)
-cat > /usbip/session-files/runner-register.sh <<'SH'
+cat > /usbip/session-files/runner-register.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
+  echo "This helper must be run as root; use sudo."
+  exit 1
+fi
 if [[ -z "${1:-}" || -z "${2:-}" ]]; then
   echo "Usage: $0 <repo_url> <token> [runner_name]"
   exit 1
@@ -63,11 +68,19 @@ fi
 REPO_URL="$1"
 TOKEN="$2"
 RUNNER_NAME="${3:-usbip-runner}"
-cd "${PWD}"
+RUNNER_DIR="__RUNNER_DIR__"
+if [[ ! -d "$RUNNER_DIR" ]]; then
+  echo "Runner dir $RUNNER_DIR not found"
+  exit 1
+fi
+cd "$RUNNER_DIR"
 ./config.sh --url "$REPO_URL" --token "$TOKEN" --name "$RUNNER_NAME" --labels self-hosted,proxmox --unattended
-SH
+EOF
+SAFE_OUTDIR=${OUTDIR//&/\\&}
+SAFE_OUTDIR=${SAFE_OUTDIR//|/\\|}
+sed -i "s|__RUNNER_DIR__|$SAFE_OUTDIR|g" /usbip/session-files/runner-register.sh
 chmod +x /usbip/session-files/runner-register.sh
 
 echo "Prepared runner directory at $OUTDIR and helper script at /usbip/session-files/runner-register.sh" >> /usbip/session-files/runner-setup.log
 
-echo "To register the runner, run: /usbip/session-files/runner-register.sh '$REPO_URL' <TOKEN> '$NAME'" >> /usbip/session-files/runner-setup.log
+echo "To register the runner, run: sudo /usbip/session-files/runner-register.sh '$REPO_URL' <TOKEN> '$NAME'" >> /usbip/session-files/runner-setup.log
