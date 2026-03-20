@@ -96,6 +96,9 @@ Add `?peer=http://node:3001` to any frontend route if you want the same UI to ta
 | GET | `/api/health` | Service health + version |
 | GET | `/api/system` | Host info (hostname, CPU, memory, load) |
 | GET | `/api/network/interfaces` | Local interface inventory and bind host |
+| GET | `/api/settings` | Current settings snapshot with schema and config file path |
+| POST | `/api/settings` | Save settings (validates first; 400 on error) |
+| POST | `/api/settings/validate` | Validate settings payload without saving |
 | GET | `/api/lxc/list` | List all LXC containers |
 | GET | `/api/lxc/:id/status` | Single container status |
 | GET | `/api/backups` | List vzdump backup archives |
@@ -103,6 +106,7 @@ Add `?peer=http://node:3001` to any frontend route if you want the same UI to ta
 | GET | `/api/usbip/capabilities` | Report USB/IP server/client capability flags |
 | GET | `/api/usbip/ports` | List imported USB/IP ports |
 | GET | `/api/usbip/remote/:host/devices` | List devices exported by a peer host |
+| GET | `/api/discovery/peers` | LAN peer discovery (subnet-scan + mDNS fallback) |
 | GET | `/api/virtual-bridges` | List virtual audio/video bridge profiles |
 | GET | `/api/virtual-bridges/:id` | Inspect one virtual bridge profile |
 | POST | `/api/virtual-bridges/:id/:action` | Run bridge start/stop/restart/status commands |
@@ -110,6 +114,13 @@ Add `?peer=http://node:3001` to any frontend route if you want the same UI to ta
 | POST | `/api/usbip/unbind` | Unbind device |
 | POST | `/api/usbip/connect` | Attach a remote USB/IP device |
 | POST | `/api/usbip/disconnect` | Detach an imported USB/IP device |
+
+### Settings
+
+The backend reads and writes settings from `$USBIP_CONFIG_DIR/settings.json` (default: `~/.config/usbip-web/settings.json`). The schema includes: `bindHost`, `port`, `corsAllowedOrigins`, `usbipBin`, `apiRateLimit`, `mutationRateLimit`, `mdnsServiceType`, and `logRequests`.
+
+The **Settings** page in the web UI connects to these three endpoints to provide a live, schema-driven configuration editor with validate-before-save support.
+
 
 ## Makefile Targets
 
