@@ -493,6 +493,88 @@ app.get('/api/system', (_req, res) => {
   });
 });
 
+// ── Settings ───────────────────────────────────────────────
+// Config file lives at $USBIP_CONFIG_DIR/settings.json (defaults to ~/.config/usbip-web/settings.json)
+const CONFIG_DIR = process.env.USBIP_CONFIG_DIR ||
+  path.join(os.homedir(), '.config', 'usbip-web');
+const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
+
+const SETTINGS_SCHEMA = {
+  bindHost: { type: 'string', default: '0.0.0.0', description: 'Address the backend API binds to. Use 0.0.0.0 to listen on all interfaces.' },
+  port: { type: 'number', default: 3001, description: 'TCP port for the backend API.' },
+  corsAllowedOrigins: { type: 'string', default: '', description: 'Comma-separated list of allowed CORS origins. Leave blank to disable CORS.' },
+  usbipBin: { type: 'string', default: 'usbip', description: 'Path or command name for the usbip binary.' },
+  apiRateLimit: { type: 'number', default: 1000, description: 'Max API requests per minute per IP.' },
+  mutationRateLimit: { type: 'number', default: 60, description: 'Max mutation (bind/unbind/connect/disconnect) requests per minute per IP.' },
+  mdnsServiceType: { type: 'string', default: '_usbipcentral._tcp', description: 'mDNS service type used for peer discovery announcements.' },
+  logRequests: { type: 'boolean', default: true, description: 'Log every incoming API request to stdout.' }
+};
+
+function readSettings() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+    }
+  } catch (_) { /* fall through to defaults */ }
+  return Object.fromEntries(Object.entries(SETTINGS_SCHEMA).map(([k, v]) => [k, v.default]));
+}
+
+function validateSettings(incoming) {
+  const errors = {};
+  for (const [key, schema] of Object.entries(SETTINGS_SCHEMA)) {
+    const value = incoming[key];
+    if (value === undefined || value === null || value === '') continue;
+    if (schema.type === 'number' && (isNaN(Number(value)) || Number(value) <= 0)) {
+      errors[key] = `Must be a positive number`;
+    }
+    if (schema.type === 'boolean' && typeof value !== 'boolean' && value !== 'true' && value !== 'false') {
+      errors[key] = `Must be true or false`;
+    }
+    if (key === 'bindHost' && value && !/^[\d.]+$|^::$|^::1$|^0\.0\.0\.0$/.test(value)) {
+      errors[key] = `Must be a valid IP address or 0.0.0.0`;
+    }
+    if (key === 'port') {
+      const p = Number(value);
+      if (isNaN(p) || p < 1 || p > 65535) errors[key] = `Must be between 1 and 65535`;
+    }
+  }
+  return errors;
+}
+
+// GET /api/settings – return current settings snapshot with schema
+app.get('/api/settings', (_req, res) => {
+  const current = readSettings();
+  res.json({
+    settings: current,
+    schema: SETTINGS_SCHEMA,
+    configFile: SETTINGS_FILE
+  });
+});
+
+// POST /api/settings/validate – validate without saving
+app.post('/api/settings/validate', (req, res) => {
+  const errors = validateSettings(req.body || {});
+  const valid = Object.keys(errors).length === 0;
+  res.json({ valid, errors });
+});
+
+// POST /api/settings – save settings
+app.post('/api/settings', (req, res) => {
+  const incoming = req.body || {};
+  const errors = validateSettings(incoming);
+  if (Object.keys(errors).length > 0) {
+    return res.status(400).json({ valid: false, errors });
+  }
+  try {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    const merged = Object.assign(readSettings(), incoming);
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(merged, null, 2), 'utf8');
+    res.json({ ok: true, saved: merged, configFile: SETTINGS_FILE });
+  } catch (err) {
+    res.status(500).json({ error: `Could not save settings: ${err.message}` });
+  }
+});
+
 // ── SPA fallback (must be after API routes) ────────────────
 if (fs.existsSync(frontendDist)) {
   app.get('*', (_req, res) => res.sendFile(path.join(frontendDist, 'index.html')));

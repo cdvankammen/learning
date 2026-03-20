@@ -214,3 +214,79 @@ describe('POST /api/backups/trigger/:vmid', () => {
     expect(res.body.error).toMatch(/invalid/)
   })
 })
+
+describe('GET /api/settings', () => {
+  test('returns settings snapshot with schema and configFile', async () => {
+    const res = await request(app).get('/api/settings')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('settings')
+    expect(res.body).toHaveProperty('schema')
+    expect(res.body).toHaveProperty('configFile')
+    expect(typeof res.body.settings).toBe('object')
+    expect(typeof res.body.schema).toBe('object')
+    // schema must include at least bindHost and port
+    expect(res.body.schema).toHaveProperty('bindHost')
+    expect(res.body.schema).toHaveProperty('port')
+  })
+})
+
+describe('POST /api/settings/validate', () => {
+  test('accepts valid settings', async () => {
+    const res = await request(app)
+      .post('/api/settings/validate')
+      .send({ port: 3001, bindHost: '0.0.0.0' })
+    expect(res.status).toBe(200)
+    expect(res.body.valid).toBe(true)
+    expect(Object.keys(res.body.errors || {})).toHaveLength(0)
+  })
+
+  test('rejects invalid port', async () => {
+    const res = await request(app)
+      .post('/api/settings/validate')
+      .send({ port: 99999 })
+    expect(res.status).toBe(200)
+    expect(res.body.valid).toBe(false)
+    expect(res.body.errors).toHaveProperty('port')
+  })
+
+  test('rejects invalid bindHost', async () => {
+    const res = await request(app)
+      .post('/api/settings/validate')
+      .send({ bindHost: 'not-an-ip' })
+    expect(res.status).toBe(200)
+    expect(res.body.valid).toBe(false)
+    expect(res.body.errors).toHaveProperty('bindHost')
+  })
+})
+
+describe('POST /api/settings', () => {
+  const os = require('os')
+  const path = require('path')
+  const fs = require('fs')
+
+  test('saves valid settings and returns ok', async () => {
+    // Use a temp config dir so we do not pollute the host
+    const tmpDir = path.join(os.tmpdir(), `usbip-test-settings-${process.pid}`)
+    process.env.USBIP_CONFIG_DIR = tmpDir
+    try {
+      const res = await request(app)
+        .post('/api/settings')
+        .send({ port: 3002, bindHost: '0.0.0.0', logRequests: true })
+      expect(res.status).toBe(200)
+      expect(res.body.ok).toBe(true)
+      expect(res.body.saved).toHaveProperty('port', 3002)
+    } finally {
+      delete process.env.USBIP_CONFIG_DIR
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects and returns 400 on invalid settings', async () => {
+    const res = await request(app)
+      .post('/api/settings')
+      .send({ port: 99999 })
+    expect(res.status).toBe(400)
+    expect(res.body.valid).toBe(false)
+    expect(res.body.errors).toHaveProperty('port')
+  })
+})
