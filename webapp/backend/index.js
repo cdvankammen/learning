@@ -108,6 +108,46 @@ app.post('/api/usbip/unbind', (req, res) => {
   });
 });
 
+// ── LXC actions ────────────────────────────────────────────
+function validateVmid(id) {
+  return /^\d{1,5}$/.test(id);
+}
+
+app.post('/api/lxc/:id/start', (req, res) => {
+  const id = req.params.id;
+  if (!validateVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
+  exec(`pct start ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
+    if (err) return res.status(500).json({ error: stderr || err.message });
+    res.json({ ok: true, vmid: id, action: 'started', output: stdout });
+  });
+});
+
+app.post('/api/lxc/:id/stop', (req, res) => {
+  const id = req.params.id;
+  if (!validateVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
+  exec(`pct stop ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
+    if (err) return res.status(500).json({ error: stderr || err.message });
+    res.json({ ok: true, vmid: id, action: 'stopped', output: stdout });
+  });
+});
+
+// ── Backup trigger ─────────────────────────────────────────
+app.post('/api/backups/trigger/:vmid', (req, res) => {
+  const vmid = req.params.vmid;
+  if (!validateVmid(vmid)) return res.status(400).json({ error: 'invalid vmid' });
+  exec(`vzdump ${vmid} --dumpdir /var/lib/vz/dump --compress zstd --mode snapshot`, { timeout: 600000 }, (err, stdout, stderr) => {
+    if (err) {
+      // Fallback to stop mode
+      exec(`vzdump ${vmid} --dumpdir /var/lib/vz/dump --compress zstd --mode stop`, { timeout: 600000 }, (err2, stdout2, stderr2) => {
+        if (err2) return res.status(500).json({ error: stderr2 || err2.message });
+        res.json({ ok: true, vmid, mode: 'stop', output: stdout2 });
+      });
+      return;
+    }
+    res.json({ ok: true, vmid, mode: 'snapshot', output: stdout });
+  });
+});
+
 // ── System info endpoint ───────────────────────────────────
 app.get('/api/system', (_req, res) => {
   const os = require('os');

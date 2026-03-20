@@ -53,6 +53,8 @@ button {
   transition: opacity 0.15s;
 }
 button:hover { opacity: 0.85; }
+button.btn-danger { background: var(--red); color: #fff; }
+button.btn-danger:hover { opacity: 0.85; }
 
 .alert { background: var(--red); color: #fff; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; }
 .alert.info { background: var(--accent); color: #000; }

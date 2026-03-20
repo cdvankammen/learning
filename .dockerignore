@@ -1,0 +1,9 @@
+node_modules
+dist
+*.log
+.git
+.github
+e2e
+tests
+__pycache__
+*.pyc

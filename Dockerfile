@@ -1,0 +1,20 @@
+FROM node:22-alpine AS frontend-build
+WORKDIR /app/frontend
+COPY webapp/frontend/package*.json ./
+RUN npm ci --no-audit
+COPY webapp/frontend/ ./
+RUN npm run build
+
+FROM node:22-alpine AS production
+WORKDIR /app
+COPY webapp/backend/package*.json ./
+RUN npm ci --no-audit --omit=dev
+COPY webapp/backend/ ./
+COPY --from=frontend-build /app/frontend/dist ./public
+ENV NODE_ENV=production
+ENV PORT=3001
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+  CMD wget -qO- http://localhost:3001/api/health || exit 1
+USER node
+CMD ["node", "index.js"]

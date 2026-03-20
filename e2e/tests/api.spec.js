@@ -77,3 +77,24 @@ test('POST /api/usbip/unbind rejects missing busid', async ({ request }) => {
   const resp = await request.post('/api/usbip/unbind', { data: {} });
   expect(resp.status()).toBe(400);
 });
+
+// ── LXC action endpoints ─────────────────────────────────
+test('POST /api/lxc/:id/start rejects invalid vmid', async ({ request }) => {
+  const resp = await request.post('/api/lxc/abc/start');
+  expect(resp.status()).toBe(400);
+  const body = await resp.json();
+  expect(body.error).toContain('invalid');
+});
+
+test('POST /api/lxc/:id/stop rejects invalid vmid', async ({ request }) => {
+  const resp = await request.post('/api/lxc/abc/stop');
+  expect(resp.status()).toBe(400);
+});
+
+// ── Backup trigger endpoint ──────────────────────────────
+test('POST /api/backups/trigger rejects invalid vmid', async ({ request }) => {
+  const resp = await request.post('/api/backups/trigger/abc');
+  expect(resp.status()).toBe(400);
+  const body = await resp.json();
+  expect(body.error).toContain('invalid');
+});

@@ -87,3 +87,26 @@ describe('POST /api/usbip/unbind', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('POST /api/lxc/:id/start', () => {
+  test('rejects invalid vmid', async () => {
+    const res = await request(app).post('/api/lxc/abc/start')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/invalid/)
+  })
+})
+
+describe('POST /api/lxc/:id/stop', () => {
+  test('rejects invalid vmid', async () => {
+    const res = await request(app).post('/api/lxc/abc/stop')
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/backups/trigger/:vmid', () => {
+  test('rejects invalid vmid', async () => {
+    const res = await request(app).post('/api/backups/trigger/abc')
+    expect(res.status).toBe(400)
+    expect(res.body.error).toMatch(/invalid/)
+  })
+})

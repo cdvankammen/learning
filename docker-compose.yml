@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  usbip-web:
+    build: .
+    container_name: usbip-web
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - /var/lib/vz/dump:/var/lib/vz/dump:ro
+      - /etc/pve:/etc/pve:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - usbip-net
+
+  # Optional: nginx reverse proxy with SSL
+  # Uncomment and configure certs to enable
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: usbip-proxy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "443:443"
+  #     - "80:80"
+  #   volumes:
+  #     - ./templates/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #   depends_on:
+  #     - usbip-web
+  #   networks:
+  #     - usbip-net
+
+networks:
+  usbip-net:
+    driver: bridge
