@@ -20,8 +20,8 @@ jobs:
         working-directory: webapp/backend
         run: npm ci
       - name: Run backend tests
-        run: |
-          npm test
+        working-directory: webapp/backend
+        run: npm test
 
   frontend:
     uses: ./.github/workflows/ci-frontend.yml
