@@ -11,6 +11,7 @@ SERVICE_MANAGER="${USBIP_SERVICE_MANAGER:-}"
 MDNS_SERVICE_TYPE="${USBIP_MDNS_SERVICE_TYPE:-}"
 MDNS_PID_FILE="${USBIP_MDNS_PID_FILE:-}"
 MDNS_LOG_FILE="${USBIP_MDNS_LOG_FILE:-}"
+DRY_RUN="${DRY_RUN:-0}"
 
 load_cli_config() {
   [ -r "$CLI_CONFIG_FILE" ] || return 0
@@ -98,6 +99,7 @@ ${YELLOW}Commands:${NC}
 
 Set ${CYAN}API_URL${NC} to any node's /api base URL to control that node directly from the terminal.
 You can also create ${CYAN}~/.usbip/config${NC} with KEY=VALUE pairs to persist defaults.
+Set ${CYAN}DRY_RUN=1${NC} to preview bind, unbind, connect, disconnect, and virtual bridge actions.
 EOF
   exit 0
 }
@@ -107,7 +109,12 @@ api_get() {
 }
 
 api_post() {
-  curl -sf -X POST -H 'Content-Type: application/json' -d "$2" "${API_URL}${1}" 2>/dev/null || echo '{"error":"API not reachable"}'
+  local -a curl_args=(-sf -X POST -H 'Content-Type: application/json')
+  if [ "$DRY_RUN" = "1" ]; then
+    curl_args+=(-H 'X-Dry-Run: 1')
+  fi
+  curl_args+=(-d "$2" "${API_URL}${1}")
+  curl "${curl_args[@]}" 2>/dev/null || echo '{"error":"API not reachable"}'
 }
 
 die() { echo -e "${RED}ERROR: $*${NC}" >&2; exit 1; }
