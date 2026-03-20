@@ -39,7 +39,7 @@ fi
 
 # Find free VMID in 590..599
 for vm in $(seq 590 599); do
-  if [ ! -f /etc/pve/lxc/${vm}.conf ]; then
+  if [ ! -f "/etc/pve/lxc/${vm}.conf" ]; then
     freevm=$vm
     break
   fi

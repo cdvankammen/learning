@@ -35,7 +35,8 @@ fi
 for pat in "${PATTERNS[@]}"; do
   log "Processing pattern $pat (keep=$KEEP)"
   # collect files sorted by mtime (newest first)
-  mapfile -t files < <(ls -1t "$DUMP_DIR"/$pat 2>/dev/null || true)
+  # shellcheck disable=SC2086 # intentional glob expansion for pattern variable
+  mapfile -t files < <(find "$DUMP_DIR" -maxdepth 1 -type f -name "$pat" -printf '%T@ %p\n' 2>/dev/null | sort -nr | sed 's/^[0-9.]* //')
   count=${#files[@]}
   if [ "$count" -le "$KEEP" ]; then
     log "No files to prune for pattern $pat (found $count)"
@@ -49,7 +50,11 @@ for pat in "${PATTERNS[@]}"; do
     if [ "$DRY_RUN" -eq 1 ]; then
       log "DRY-RUN: would remove $f"
     else
-      rm -f -- "$f" && log "Removed $f" || log "Failed to remove $f"
+      if rm -f -- "$f"; then
+        log "Removed $f"
+      else
+        log "Failed to remove $f"
+      fi
     fi
   done
 done

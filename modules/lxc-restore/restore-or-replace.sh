@@ -2,6 +2,7 @@
 set -euo pipefail
 
 LOG=/usbip/session-files/restore-or-replace.log
+mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
 echo "Started at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
 
@@ -57,8 +58,23 @@ for vmid in "${VMIDS[@]}"; do
 
   log "Processing missing original VMID ${vmid}"
 
-  VZDUMP=$(ls -1t /var/lib/vz/dump/vzdump-lxc-${vmid}-*.tar.lzo 2>/dev/null | head -n1 || true)
-  FILEBACKUP=$(ls -1t /var/lib/vz/dump/filebackup-${vmid}-rootfs-*.tar.xz 2>/dev/null | head -n1 || true)
+  # Prefer common archive extensions for vzdump; fall back to logging presence only
+  VZDUMP=""
+  for ext in tar.lzo tar.xz tar.gz tar.zst tgz tar; do
+    cand=$(find /var/lib/vz/dump -maxdepth 1 -type f -name "vzdump-lxc-${vmid}-*.${ext}" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | sed 's/^[0-9.]* //') || true
+    if [ -n "$cand" ]; then
+      VZDUMP="$cand"
+      break
+    fi
+  done
+  if [ -z "$VZDUMP" ]; then
+    any=$(find /var/lib/vz/dump -maxdepth 1 -type f -name "vzdump-lxc-${vmid}-*" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | sed 's/^[0-9.]* //') || true
+    if [ -n "$any" ]; then
+      log "Found vzdump file for ${vmid} but no known archive extension (found ${any}). Will not attempt pct restore from non-archive."
+    fi
+  fi
+  # shellcheck disable=SC2034 # variable kept for future use / informational logging
+  FILEBACKUP=$(find /var/lib/vz/dump -maxdepth 1 -type f -name "filebackup-${vmid}-rootfs-*.tar.xz" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | sed 's/^[0-9.]* //') || true
 
   if [ -n "$VZDUMP" ]; then
     NEWID=$(find_free_id) || NEWID=""

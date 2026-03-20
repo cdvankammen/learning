@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+# bin/usbip-ctl — CLI management tool for the USB/IP platform
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+API_URL="${API_URL:-http://127.0.0.1:3001}"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+usage() {
+  cat <<EOF
+${CYAN}usbip-ctl${NC} — USB/IP Platform Management CLI
+
+${YELLOW}Usage:${NC} usbip-ctl <command> [args]
+
+${YELLOW}Commands:${NC}
+  ${GREEN}status${NC}          Show platform status (API health + system info)
+  ${GREEN}containers${NC}      List LXC containers
+  ${GREEN}backups${NC}         List backup archives
+  ${GREEN}devices${NC}         List USB/IP devices
+  ${GREEN}bind${NC} <busid>    Bind a USB device for export
+  ${GREEN}unbind${NC} <busid>  Unbind a USB device
+  ${GREEN}health${NC}          Run health check script
+  ${GREEN}prune${NC} [--exec]  Prune old backups (dry-run by default)
+  ${GREEN}backup${NC}          Run backup for 500-999 range
+  ${GREEN}test${NC}            Run all tests (BATS + E2E)
+  ${GREEN}lint${NC}            Run all linters
+  ${GREEN}build${NC}           Build frontend
+  ${GREEN}serve${NC}           Start backend server
+  ${GREEN}logs${NC}            Tail backend logs
+  ${GREEN}install${NC}         Install systemd service (dry-run)
+  ${GREEN}cron${NC}            Install cron jobs (dry-run)
+  ${GREEN}help${NC}            Show this help
+EOF
+  exit 0
+}
+
+api_get() {
+  curl -sf "${API_URL}${1}" 2>/dev/null || echo '{"error":"API not reachable"}'
+}
+
+api_post() {
+  curl -sf -X POST -H 'Content-Type: application/json' -d "$2" "${API_URL}${1}" 2>/dev/null || echo '{"error":"API not reachable"}'
+}
+
+cmd_status() {
+  echo -e "${CYAN}=== Platform Status ===${NC}"
+  local health
+  health=$(api_get /api/health)
+  echo -e "Health: $(echo "$health" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("status","unknown"))' 2>/dev/null || echo "unknown")"
+  echo -e "Version: $(echo "$health" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("version","?"))' 2>/dev/null || echo "?")"
+  
+  local sys
+  sys=$(api_get /api/system)
+  echo -e "\n${CYAN}=== System ===${NC}"
+  echo "$sys" | python3 -c '
+import sys,json
+try:
+  d=json.load(sys.stdin)
+  print(f"Hostname: {d[\"hostname\"]}")
+  print(f"CPUs: {d[\"cpus\"]}  Load: {d[\"loadavg\"][0]:.2f}, {d[\"loadavg\"][1]:.2f}, {d[\"loadavg\"][2]:.2f}")
+  t=d["mem"]["total"]/(1024**3); f=d["mem"]["free"]/(1024**3)
+  print(f"Memory: {f:.1f}G free / {t:.1f}G total")
+  print(f"Uptime: {d[\"uptime\"]/3600:.1f}h")
+except: print("(could not parse system info)")
+' 2>/dev/null
+}
+
+cmd_containers() {
+  echo -e "${CYAN}=== LXC Containers ===${NC}"
+  api_get /api/lxc/list | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+cs=d.get("containers",[])
+if not cs: print("No containers found"); sys.exit(0)
+print(f"{"VMID":<8} {"STATUS":<12} {"NAME"}")
+print("-"*40)
+for c in cs:
+  s=c["status"]
+  color="\033[32m" if s=="running" else "\033[31m"
+  print(f"{c[\"vmid\"]:<8} {color}{s:<12}\033[0m {c.get(\"name\",\"\")}")
+print(f"\nTotal: {len(cs)} containers")
+' 2>/dev/null
+}
+
+cmd_backups() {
+  echo -e "${CYAN}=== Backup Archives ===${NC}"
+  api_get /api/backups | python3 -c '
+import sys,json
+from datetime import datetime
+d=json.load(sys.stdin)
+bs=d.get("backups",[])
+if not bs: print("No backups found"); sys.exit(0)
+print(f"{"VMID":<8} {"SIZE":<12} {"AGE":<12} {"FILE"}")
+print("-"*70)
+for b in bs:
+  sz=b["size"]
+  if sz>1e9: szs=f"{sz/1e9:.1f}G"
+  elif sz>1e6: szs=f"{sz/1e6:.1f}M"
+  else: szs=f"{sz}B"
+  mt=datetime.fromisoformat(b["mtime"].replace("Z","+00:00"))
+  age=int((datetime.now(mt.tzinfo)-mt).total_seconds())
+  if age<3600: ages=f"{age//60}m ago"
+  elif age<86400: ages=f"{age//3600}h ago"
+  else: ages=f"{age//86400}d ago"
+  print(f"{b[\"vmid\"]:<8} {szs:<12} {ages:<12} {b[\"file\"]}")
+print(f"\nTotal: {len(bs)} archives")
+' 2>/dev/null
+}
+
+cmd_devices() {
+  echo -e "${CYAN}=== USB/IP Devices ===${NC}"
+  api_get /api/usbip/devices | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+devs=d.get("devices",[])
+if not devs: print("No USB devices found"); sys.exit(0)
+print(f"{"BUS ID":<16} {"DESCRIPTION"}")
+print("-"*50)
+for dev in devs:
+  print(f"{dev[\"busid\"]:<16} {dev[\"description\"]}")
+' 2>/dev/null
+}
+
+cmd_bind() {
+  local busid="${1:?Usage: usbip-ctl bind <busid>}"
+  echo -e "${YELLOW}Binding device $busid...${NC}"
+  api_post /api/usbip/bind "{\"busid\":\"$busid\"}"
+  echo ""
+}
+
+cmd_unbind() {
+  local busid="${1:?Usage: usbip-ctl unbind <busid>}"
+  echo -e "${YELLOW}Unbinding device $busid...${NC}"
+  api_post /api/usbip/unbind "{\"busid\":\"$busid\"}"
+  echo ""
+}
+
+case "${1:-help}" in
+  status)     cmd_status ;;
+  containers) cmd_containers ;;
+  backups)    cmd_backups ;;
+  devices)    cmd_devices ;;
+  bind)       cmd_bind "${2:-}" ;;
+  unbind)     cmd_unbind "${2:-}" ;;
+  health)     bash "$REPO_ROOT/modules/monitor/health-check.sh" ;;
+  prune)
+    if [ "${2:-}" = "--exec" ]; then
+      bash "$REPO_ROOT/modules/backup/prune-backups.sh" -k 10
+    else
+      bash "$REPO_ROOT/modules/backup/prune-backups.sh" -n -k 10
+    fi ;;
+  backup)     bash "$REPO_ROOT/tools/backup-500-range.sh" ;;
+  test)       cd "$REPO_ROOT" && make test ;;
+  lint)       cd "$REPO_ROOT" && make lint ;;
+  build)      cd "$REPO_ROOT" && make build ;;
+  serve)      cd "$REPO_ROOT/webapp/backend" && exec node index.js ;;
+  logs)       tail -f /usbip/session-files/backend-run*.log 2>/dev/null || echo "No logs found" ;;
+  install)    bash "$REPO_ROOT/tools/install-service.sh" --install ;;
+  cron)       bash "$REPO_ROOT/tools/install-cron-backups.sh" --install ;;
+  help|*)     usage ;;
+esac

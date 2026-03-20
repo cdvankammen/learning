@@ -20,16 +20,17 @@ cd /usbip/repo || exit 1
 git remote remove origin 2>/dev/null || true
 if [ "$AUTH" = "ssh_private_key" ]; then
   if [ -z "$SSH_KEY_FILE" ]; then echo "SSH key file required"; exit 1; fi
-  eval $(ssh-agent -s) >/dev/null 2>&1 || true
+  eval "$(ssh-agent -s)" >/dev/null 2>&1 || true
   ssh-add "$SSH_KEY_FILE" || true
   git remote add origin "$REMOTE"
   git push -u origin main
 elif [ "$AUTH" = "https_token" ]; then
   if [ -z "$HTTPS_TOKEN" ]; then echo "HTTPS token required"; exit 1; fi
   if echo "$REMOTE" | grep -q '^https://'; then
-    REMOTE_AUTH="$(echo "$REMOTE" | sed -E 's#https://#https://'$HTTPS_TOKEN'@#')"
-    git remote add origin "$REMOTE_AUTH"
-    git push -u origin main
+    # push by URL to avoid storing token in git remote config
+    REMOTE_AUTH="$(echo "$REMOTE" | sed -E 's#https://#https://'"$HTTPS_TOKEN"'@#')"
+    # push directly by URL (avoid saving token in remote)
+    git push "$REMOTE_AUTH" main:main
   else
     echo "HTTPS token auth requires https remote URL"
     exit 1

@@ -1,8 +1,9 @@
 #!/bin/bash
+# shellcheck disable=SC2034
 set -euo pipefail
 
 # LXC creation helper using user defaults
-# Defaults (can be overridden via flags)
+# Defaults (can be overridden via flags) — vars used by flag parsing and template logic
 var_os=debian
 var_version=13
 var_unprivileged=1
@@ -60,7 +61,7 @@ fi
 # Find a debian ${var_version} template in template cache
 template_path=""
 # Use a safe glob and avoid redirect in the for header
-for f in /var/lib/vz/template/cache/*debian*${var_version}*; do
+for f in /var/lib/vz/template/cache/*debian*"${var_version}"*; do
   if [ -f "$f" ]; then
     template_path="$f"
     break

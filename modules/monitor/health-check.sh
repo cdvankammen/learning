@@ -21,7 +21,7 @@ else
 fi
 
 # Latest CT500 backup age check
-LATEST=$(ls -1t "$DUMP_DIR"/vzdump-lxc-500-*.tar.* 2>/dev/null | head -n1 || true)
+LATEST=$(find "$DUMP_DIR" -maxdepth 1 -type f -name 'vzdump-lxc-500-*.tar.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n1 | sed 's/^[0-9.]* //') || true
 if [ -z "$LATEST" ]; then
   echo "$(date -u): NO BACKUP found for CT500" >> "$LOG"
   REPORT=2
@@ -37,7 +37,7 @@ else
 fi
 
 # Count vzdump archives
-NUM=$(ls -1 "$DUMP_DIR"/vzdump-lxc-*.tar.* 2>/dev/null | wc -l || echo 0)
+NUM=$(find "$DUMP_DIR" -maxdepth 1 -type f -name 'vzdump-lxc-*.tar.*' 2>/dev/null | wc -l || echo 0)
 echo "$(date -u): total vzdump archives: $NUM" >> "$LOG"
 
 if [ "$REPORT" -gt 0 ]; then

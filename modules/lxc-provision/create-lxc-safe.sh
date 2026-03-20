@@ -29,8 +29,8 @@ fi
 echo "Using VMID=$VMID TEMPLATE=$TEMPLATE PASSWORD=[redacted] MEM=$MEM CORES=$CORES NET=$NET STORAGE=$STORAGE"
 
 # Verify template exists in local
-if ! pveam list local 2>/dev/null | grep -q "$(basename \"$TEMPLATE\")"; then
-  echo "Template $TEMPLATE not found in local templates. Download with: pveam download local $(basename \"$TEMPLATE\")" >&2
+if ! pveam list local 2>/dev/null | grep -q "$(basename "$TEMPLATE")"; then
+  echo "Template $TEMPLATE not found in local templates. Download with: pveam download local $(basename "$TEMPLATE")" >&2
   exit 2
 fi
 

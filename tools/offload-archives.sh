@@ -34,9 +34,9 @@ done
 
 echo "offload run at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
 [ -d "$DUMP_DIR" ] || { echo "DUMP_DIR $DUMP_DIR missing" >> "$LOG"; exit 1; }
-if [[ -z "$BUCKET" ]]; then echo "No bucket specified. Provide --bucket BUCKET" >> "$LOG"; exit 1; fi
+if [[ $DRY_RUN -eq 0 && -z "$BUCKET" ]]; then echo "No bucket specified for exec mode. Provide --bucket BUCKET" >> "$LOG"; exit 1; fi
 
-mapfile -t files < <(find "$DUMP_DIR" -maxdepth 1 -type f \( -name 'vzdump-lxc-*.tar.*' -o -name 'filebackup-*-rootfs-*.tar.xz' \) -mtime +"$DAYS" -print)
+mapfile -t files < <(find "$DUMP_DIR" -maxdepth 1 -type f \( -name 'vzdump-lxc-*.tar.*' -o -name 'filebackup-*-rootfs-*.tar.xz' \) -not -name '*.notes' -not -name '*.protected' -mtime +"$DAYS" -print)
 
 if [[ ${#files[@]} -eq 0 ]]; then
   echo "No candidate files older than $DAYS days" >> "$LOG"

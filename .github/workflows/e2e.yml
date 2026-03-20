@@ -1,0 +1,33 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install backend deps
+        run: |
+          cd webapp/backend
+          npm ci
+      - name: Start backend
+        run: |
+          cd webapp/backend
+          nohup npm start &> backend-nohup.log &
+          sleep 2
+      - name: Install e2e deps
+        run: |
+          cd e2e
+          npm ci
+      - name: Run Playwright tests
+        run: |
+          cd e2e
+          npx playwright test --reporter=github

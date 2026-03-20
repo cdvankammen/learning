@@ -1,0 +1,21 @@
+# /etc/logrotate.d/usbip — log rotation for USB/IP management platform
+/var/log/usbip-*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 root root
+}
+
+/usbip/session-files/*.log {
+    weekly
+    missingok
+    rotate 4
+    compress
+    delaycompress
+    notifempty
+    size 10M
+    create 0640 root root
+}

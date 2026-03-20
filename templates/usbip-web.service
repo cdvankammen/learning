@@ -1,0 +1,25 @@
+[Unit]
+Description=USB/IP Web Management Console
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/usbip/repo/webapp/backend
+ExecStart=/usr/bin/node /usbip/repo/webapp/backend/index.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3001
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=usbip-web
+
+# Hardening
+NoNewPrivileges=false
+ProtectSystem=strict
+ReadWritePaths=/usbip /var/lib/vz/dump /var/log
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

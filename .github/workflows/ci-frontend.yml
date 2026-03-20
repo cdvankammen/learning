@@ -1,0 +1,25 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install and build frontend
+        working-directory: webapp/frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usbip-frontend
+          path: webapp/frontend/dist
