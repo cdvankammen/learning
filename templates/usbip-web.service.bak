@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/home/chris/Documents/usbip/webapp/backend
-ExecStart=/usr/bin/node /home/chris/Documents/usbip/webapp/backend/index.js
+WorkingDirectory=/usbip/repo/webapp/backend
+ExecStart=/usr/bin/node /usbip/repo/webapp/backend/index.js
 Restart=on-failure
 RestartSec=5
 Environment=NODE_ENV=production
