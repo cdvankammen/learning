@@ -1,18 +1,18 @@
 # USB/IP Management Platform
 
-A comprehensive platform for managing Proxmox LXC containers and USB/IP device sharing, with a modern web dashboard, automated backups, and CI/CD pipeline.
+A comprehensive USB/IP platform with optional Proxmox LXC integration, a modern web dashboard, automated backups, and CI/CD pipeline support.
 
 ## Architecture
 
 ```
  /home/chris/Documents/usbip/
 ├── webapp/
-│   ├── frontend/          # Vite + React SPA (Dashboard, Computers, Containers, Devices, Backups, Settings)
+│   ├── frontend/          # Vite + React SPA (Dashboard, Computers, Devices, Settings, optional LXC helpers)
 │   └── backend/           # Express + Socket.IO API server
 ├── modules/
-│   ├── lxc-provision/     # LXC creation with safe defaults
-│   ├── lxc-restore/       # Restore-or-replace from vzdump archives
-│   ├── backup/            # Prune retention & restore validation
+│   ├── lxc-provision/     # Optional LXC creation with safe defaults
+│   ├── lxc-restore/       # Optional restore-or-replace from vzdump archives
+│   ├── backup/            # Optional prune retention & restore validation
 │   ├── monitor/           # Health-check (disk, backup age, alerts)
 │   ├── network/           # Network validation for containers
 │   └── usbip/            # USB/IP bind/unbind/list helpers
@@ -56,7 +56,7 @@ Open http://localhost:3001 to access the dashboard.
 
 The backend binds to all interfaces by default, so you can reach it through any LAN IP on the host. The new `Computers` page shows the reachable URLs that the machine advertises on the network.
 
-Live UI updates are pushed over the backend WebSocket endpoint at `/ws`, so the Clients, Containers, Devices, Backups, and Computers views refresh without manual reloads when the backend state changes.
+Live UI updates are pushed over the backend WebSocket endpoint at `/ws`, so the Clients, Devices, Computers, and optional Proxmox views refresh without manual reloads when the backend state changes.
 
 The backend also serves `GET /api/openapi.json` as a machine-readable API description for the current HTTP routes.
 
@@ -160,7 +160,7 @@ Optional API authentication is configured through environment variables instead 
 - `USBIP_AUTH_VIEWER_TOKEN` enables read-only access for dashboard and metrics requests.
 - `USBIP_AUTH_REQUIRED=1` forces auth even if only one token is set.
 
-Send the token as `Authorization: Bearer <token>` or `X-USBIP-Token: <token>`. When auth is enabled, GET `/api/health` remains public for probes, while `/api/metrics`, settings, USB/IP mutation routes, and the LXC/backup management routes require a valid token.
+Send the token as `Authorization: Bearer <token>` or `X-USBIP-Token: <token>`. When auth is enabled, GET `/api/health` remains public for probes, while `/api/metrics`, settings, USB/IP mutation routes, and the optional Proxmox integration routes require a valid token.
 
 The **Settings** page in the web UI connects to these three endpoints to provide a live, schema-driven configuration editor with validate-before-save support.
 

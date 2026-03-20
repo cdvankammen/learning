@@ -77,7 +77,10 @@ export default function Containers({ socket, socketStatus, socketContainers, has
 
   return (
     <div className="page">
-      <h2>LXC Containers <span className="refresh-dot">●</span></h2>
+      <h2>LXC Containers (Proxmox only) <span className="refresh-dot">●</span></h2>
+      <p className="page-note">
+        Optional Proxmox integration for container lifecycle control. USB/IP device transport remains separate.
+      </p>
       {socketStatus === 'connected' && hasSocketSnapshot && <div className="alert info">Live LXC updates are being received from the socket backend.</div>}
       {loading && containers.length === 0 && <div className="card">Loading containers...</div>}
       {error && <div className="alert">{error}</div>}

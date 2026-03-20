@@ -71,7 +71,7 @@ export default function Dashboard() {
           <li><code>bin/usbip-ctl up</code>, <code>down</code>, <code>restart</code>, and <code>service status</code> control the local service when it is installed under systemd.</li>
           <li>The Computers page now shows a Discovered peers section backed by <code>/api/discovery/peers</code>; subnet-scan and mDNS/Bonjour discovery are both live, and the same UI can target another node with <code>?peer=http://node:3001</code>.</li>
           <li>The Virtual Devices page inventories <code>/api/virtual-bridges</code> and can drive configured media bridges such as go2rtc, PipeWire, v4l2loopback, and ALSA loopback.</li>
-          <li>Use <strong>Computers</strong> to discover LAN peers, <strong>Devices</strong> to export/import USB devices, <strong>Containers</strong> for LXC actions, and <strong>Backups</strong> for retention and restore work.</li>
+          <li>Use <strong>Computers</strong> to discover LAN peers, <strong>Devices</strong> to export/import USB devices, and the optional Proxmox pages for LXC actions, backups, and restore work.</li>
         </ul>
       </div>
       <div className="card">

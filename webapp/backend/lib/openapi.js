@@ -3,18 +3,17 @@ const OPENAPI_SPEC = {
   info: {
     title: 'USB/IP Management API',
     version: '0.1.0',
-    description: 'Backend API for system status, LXC management, USB/IP device control, discovery, and virtual media bridges.'
+    description: 'Backend API for system status, optional Proxmox integration, USB/IP device control, discovery, and media bridges.'
   },
   tags: [
     { name: 'Meta' },
     { name: 'Health' },
     { name: 'System' },
     { name: 'Settings' },
-    { name: 'LXC' },
-    { name: 'Backups' },
+    { name: 'Proxmox Integration' },
     { name: 'USB/IP' },
     { name: 'Discovery' },
-    { name: 'Virtual Bridges' }
+    { name: 'Media Bridges' }
   ],
   paths: {
     '/api/openapi.json': {
@@ -95,14 +94,14 @@ const OPENAPI_SPEC = {
     },
     '/api/lxc/list': {
       get: {
-        tags: ['LXC'],
+        tags: ['Proxmox Integration'],
         summary: 'List LXC containers',
         responses: { 200: { description: 'Container list', content: { 'application/json': { schema: { $ref: '#/components/schemas/LxcListResponse' } } } } }
       }
     },
     '/api/lxc/{id}/status': {
       get: {
-        tags: ['LXC'],
+        tags: ['Proxmox Integration'],
         summary: 'Get one container status',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { 200: { description: 'Container status', content: { 'application/json': { schema: { $ref: '#/components/schemas/LxcStatusResponse' } } } } }
@@ -110,7 +109,7 @@ const OPENAPI_SPEC = {
     },
     '/api/lxc/{id}/start': {
       post: {
-        tags: ['LXC'],
+        tags: ['Proxmox Integration'],
         summary: 'Start one container',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { 200: { description: 'Start result', content: { 'application/json': { schema: { $ref: '#/components/schemas/LxcActionResponse' } } } } }
@@ -118,7 +117,7 @@ const OPENAPI_SPEC = {
     },
     '/api/lxc/{id}/stop': {
       post: {
-        tags: ['LXC'],
+        tags: ['Proxmox Integration'],
         summary: 'Stop one container',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { 200: { description: 'Stop result', content: { 'application/json': { schema: { $ref: '#/components/schemas/LxcActionResponse' } } } } }
@@ -126,14 +125,14 @@ const OPENAPI_SPEC = {
     },
     '/api/backups': {
       get: {
-        tags: ['Backups'],
+        tags: ['Proxmox Integration'],
         summary: 'List backup archives',
         responses: { 200: { description: 'Backup list', content: { 'application/json': { schema: { $ref: '#/components/schemas/BackupListResponse' } } } } }
       }
     },
     '/api/backups/trigger/{vmid}': {
       post: {
-        tags: ['Backups'],
+        tags: ['Proxmox Integration'],
         summary: 'Trigger a backup',
         parameters: [{ name: 'vmid', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { 200: { description: 'Backup result', content: { 'application/json': { schema: { $ref: '#/components/schemas/BackupTriggerResponse' } } } } }
@@ -212,14 +211,14 @@ const OPENAPI_SPEC = {
     },
     '/api/virtual-bridges': {
       get: {
-        tags: ['Virtual Bridges'],
+        tags: ['Media Bridges'],
         summary: 'List virtual media bridge profiles',
         responses: { 200: { description: 'Bridge catalog', content: { 'application/json': { schema: { $ref: '#/components/schemas/VirtualBridgesResponse' } } } } }
       }
     },
     '/api/virtual-bridges/{id}': {
       get: {
-        tags: ['Virtual Bridges'],
+        tags: ['Media Bridges'],
         summary: 'Inspect a virtual bridge profile',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { 200: { description: 'Bridge profile', content: { 'application/json': { schema: { $ref: '#/components/schemas/VirtualBridgeResponse' } } } } }
@@ -227,7 +226,7 @@ const OPENAPI_SPEC = {
     },
     '/api/virtual-bridges/{id}/{action}': {
       post: {
-        tags: ['Virtual Bridges'],
+        tags: ['Media Bridges'],
         summary: 'Run a bridge action',
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string' } },

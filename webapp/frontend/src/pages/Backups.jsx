@@ -94,7 +94,10 @@ export default function Backups({ socket }) {
 
   return (
     <div className="page">
-      <h2>Backups <span className="refresh-dot">●</span></h2>
+      <h2>LXC Backups (Proxmox only) <span className="refresh-dot">●</span></h2>
+      <p className="page-note">
+        Optional Proxmox integration for vzdump archive management and restore workflows.
+      </p>
       {loading && backups.length === 0 && <div className="card">Loading backups...</div>}
       {error && <div className="alert">{error}</div>}
       {triggerMsg && <div className="alert info">{triggerMsg}</div>}

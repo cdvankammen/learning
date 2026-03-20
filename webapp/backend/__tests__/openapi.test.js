@@ -21,5 +21,13 @@ describe('GET /api/openapi.json', () => {
     expect(res.body.openapi).toBe('3.1.0')
     expect(res.body.paths).toHaveProperty('/api/health')
     expect(res.body.paths).toHaveProperty('/api/usbip/bind')
+    expect(res.body.tags.map(tag => tag.name)).toEqual(expect.arrayContaining([
+      'Proxmox Integration',
+      'USB/IP',
+      'Media Bridges'
+    ]))
+    expect(res.body.paths['/api/lxc/list'].get.tags).toContain('Proxmox Integration')
+    expect(res.body.paths['/api/backups'].get.tags).toContain('Proxmox Integration')
+    expect(res.body.paths['/api/virtual-bridges'].get.tags).toContain('Media Bridges')
   })
 })
