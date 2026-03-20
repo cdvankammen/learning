@@ -220,7 +220,12 @@ export default function Computers() {
 
   const discoveryPeers = discovery?.peers || []
   const discoveryProviderSummary = Array.isArray(discovery?.providers) && discovery.providers.length > 0
-    ? discovery.providers.map(provider => `${provider.label}: ${provider.peerCount}/${provider.candidateCount}`).join(' · ')
+    ? discovery.providers.map(provider => {
+        const status = provider.available === false
+          ? `unavailable${provider.reason ? ` (${provider.reason})` : ''}`
+          : `${provider.peerCount}/${provider.candidateCount}`
+        return `${provider.label}: ${status}`
+      }).join(' · ')
     : 'No discovery providers reported yet'
 
   function savePeer(rawInput) {
@@ -343,7 +348,7 @@ export default function Computers() {
           <div>
             <h3>Discovered peers</h3>
             <p className="hint">
-              The current provider is a subnet scan fallback. mDNS/Bonjour can be added later without changing the UI flow.
+              The backend reports subnet-scan and mDNS/Bonjour providers. If a provider is unavailable, the reason appears in the summary below.
             </p>
           </div>
           <div className="peer-actions">
