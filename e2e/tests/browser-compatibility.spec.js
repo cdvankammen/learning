@@ -37,3 +37,12 @@ test.describe('mobile browser shell', () => {
     await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
   });
 });
+
+test('virtual devices keep codec guidance separate from USB/IP transport', async ({ page }) => {
+  await page.goto('/virtual-devices');
+  const note = page.locator('p.page-note');
+  await expect(page.getByRole('heading', { name: 'Virtual Devices' })).toBeVisible();
+  await expect(note).toContainText('separate media/driver layer');
+  await expect(note).toContainText('go2rtc, PipeWire, v4l2loopback, and ALSA loopback');
+  await expect(page.getByRole('heading', { name: 'Bridge inventory' })).toBeVisible();
+});
