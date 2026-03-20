@@ -89,6 +89,28 @@ The separate virtual-device layer is exposed through `GET /api/virtual-bridges` 
 
 Add `?peer=http://node:3001` to any frontend route if you want the same UI to talk to a different node instead of opening a separate origin.
 
+### Webcams, codecs, and media bridges
+
+USB/IP forwards raw USB traffic. It can expose a camera or audio device, but it does **not** add codec negotiation, transcoding, or media buffering.
+
+In practice:
+
+| Device / format | USB/IP fit | Notes |
+|------------------|------------|-------|
+| HID, storage, serial | Good | Best reliability |
+| MJPEG webcams on a fast LAN | Sometimes | Works best at lower resolutions / frame rates |
+| Hardware H.264 camera output | Sometimes | Better than raw YUYV, but still timing-sensitive |
+| Uncompressed YUYV / raw video | Poor | High bandwidth and isochronous timing make it fragile |
+| Capture cards / real-time audio on Wi-Fi or WAN | Poor | Use a media bridge instead |
+
+For stable video and audio sharing, prefer the virtual-device layer:
+
+- `go2rtc` for codec-aware video streaming
+- `v4l2loopback` for local camera exposure on Linux
+- PipeWire or ALSA loopback for Linux audio routing
+
+The web UI and `usbip-ctl virtual` namespace manage those bridges separately from physical USB/IP passthrough.
+
 ## API Endpoints
 
 | Method | Path | Description |

@@ -33,6 +33,14 @@ Key USB/IP findings from the research
 - The protocol is generally single-client per exported device, so any "unlimited" behavior has to come from many devices and many peers, not many clients attached to the same device.
 - Connectivity and driver failures should be surfaced directly: missing binaries, unreachable hosts, timeout errors, and platform-specific USB/IP driver issues all need visible errors.
 
+### Webcam and codec guidance
+
+- USB/IP can expose a webcam device to another machine, but it does not perform codec negotiation or transcoding. The camera driver on the client side still has to cope with the transport.
+- Compressed camera modes such as MJPEG or hardware H.264 are the most realistic USB/IP candidates, and they still work best on a low-latency wired LAN.
+- Raw YUYV / uncompressed video and capture cards are poor fits because the bandwidth and microframe timing demands are much stricter.
+- If the goal is reliable media delivery rather than raw USB passthrough, route video through `go2rtc` and a virtual camera driver such as `v4l2loopback`; for audio, use PipeWire or ALSA loopback.
+- The right user-facing message is usually: "USB/IP for the control plane, media bridge for the stream."
+
 Implementation notes
 
 - The management GUI is intentionally split from the backend so a separate controller can talk to any node over HTTP/CORS.

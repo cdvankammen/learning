@@ -1,25 +1,56 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { execSync, exec, execFile, execFileSync } = require('child_process');
 const rateLimit = require('express-rate-limit');
 const os = require('os');
 const { discoverPeers } = require('./lib/discovery');
 const { listVirtualBridges, runVirtualBridgeAction } = require('./lib/virtual-bridges');
 const pkg = require('./package.json');
-const app = express();
-const fs = require('fs');
 
-app.use(express.json());
+const CONFIG_DIR = process.env.USBIP_CONFIG_DIR ||
+  path.join(os.homedir(), '.config', 'usbip-web');
+const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
 
-const PORT = Number(process.env.PORT || 3001);
-const LISTEN_HOST = process.env.USBIP_BIND_HOST || process.env.HOST || '0.0.0.0';
-const ALLOW_ALL_CORS = process.env.USBIP_CORS_ALLOW_ALL === '1';
+function loadSettingsFileRaw() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const contents = fs.readFileSync(SETTINGS_FILE, 'utf8');
+      return JSON.parse(contents);
+    }
+  } catch (err) {
+    console.warn(`Failed to read settings from ${SETTINGS_FILE}: ${err.message}`);
+  }
+  return {};
+}
+
+function parseConfiguredInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+const BOOT_SETTINGS = loadSettingsFileRaw();
+const PORT = parseConfiguredInteger(process.env.PORT ?? BOOT_SETTINGS.port, 3001);
+const LISTEN_HOST = process.env.USBIP_BIND_HOST || process.env.HOST || BOOT_SETTINGS.bindHost || '0.0.0.0';
+const DEFAULT_USBIP_BIN = process.platform === 'win32' ? 'usbipd' : 'usbip';
+const USBIP_BIN = process.env.USBIP_BIN || BOOT_SETTINGS.usbipBin || DEFAULT_USBIP_BIN;
+const ALLOW_ALL_CORS = process.env.USBIP_CORS_ALLOW_ALL === '1' || BOOT_SETTINGS.corsAllowedOrigins === '*';
 const ALLOWED_CORS_ORIGINS = new Set(
-  (process.env.USBIP_ALLOWED_ORIGINS || '')
+  String(process.env.USBIP_ALLOWED_ORIGINS || BOOT_SETTINGS.corsAllowedOrigins || '')
     .split(',')
     .map(origin => origin.trim())
     .filter(Boolean)
 );
+const API_RATE_LIMIT = parseConfiguredInteger(process.env.USBIP_API_RATE_LIMIT ?? BOOT_SETTINGS.apiRateLimit, 1000);
+const MUTATION_RATE_LIMIT = parseConfiguredInteger(process.env.USBIP_MUTATION_RATE_LIMIT ?? BOOT_SETTINGS.mutationRateLimit, 60);
+const LOG_REQUESTS = process.env.USBIP_LOG_REQUESTS
+  ? process.env.USBIP_LOG_REQUESTS !== '0'
+  : BOOT_SETTINGS.logRequests !== false;
+const MDNS_SERVICE_TYPE = process.env.USBIP_MDNS_SERVICE_TYPE || BOOT_SETTINGS.mdnsServiceType || '_usbipcentral._tcp';
+
+const app = express();
+
+app.use(express.json());
 
 function resolveCorsOrigin(origin) {
   if (!origin) return null;
@@ -49,10 +80,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limiting — 100 requests per minute per IP
-const API_RATE_LIMIT = Number(process.env.USBIP_API_RATE_LIMIT || 1000);
-const MUTATION_RATE_LIMIT = Number(process.env.USBIP_MUTATION_RATE_LIMIT || 60);
-const USBIP_BIN = process.env.USBIP_BIN || (process.platform === 'win32' ? 'usbipd' : 'usbip');
 const limiter = rateLimit({ windowMs: 60 * 1000, max: API_RATE_LIMIT, standardHeaders: true, legacyHeaders: false });
 app.use('/api/', limiter);
 
@@ -71,6 +98,7 @@ app.use('/api/usbip/disconnect', mutationLimiter);
 
 // Request logging middleware
 app.use((req, _res, next) => {
+  if (!LOG_REQUESTS) return next();
   const ts = new Date().toISOString();
   console.log(`${ts} ${req.method} ${req.url}`);
   next();
@@ -344,6 +372,7 @@ app.get('/api/discovery/peers', (req, res, next) => {
   discoverPeers({
     interfaces,
     port: PORT,
+    serviceType: MDNS_SERVICE_TYPE,
     timeoutMs,
     maxHostsPerInterface,
     concurrency
@@ -494,11 +523,6 @@ app.get('/api/system', (_req, res) => {
 });
 
 // ── Settings ───────────────────────────────────────────────
-// Config file lives at $USBIP_CONFIG_DIR/settings.json (defaults to ~/.config/usbip-web/settings.json)
-const CONFIG_DIR = process.env.USBIP_CONFIG_DIR ||
-  path.join(os.homedir(), '.config', 'usbip-web');
-const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
-
 const SETTINGS_SCHEMA = {
   bindHost: { type: 'string', default: '0.0.0.0', description: 'Address the backend API binds to. Use 0.0.0.0 to listen on all interfaces.' },
   port: { type: 'number', default: 3001, description: 'TCP port for the backend API.' },
@@ -511,12 +535,8 @@ const SETTINGS_SCHEMA = {
 };
 
 function readSettings() {
-  try {
-    if (fs.existsSync(SETTINGS_FILE)) {
-      return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
-    }
-  } catch (_) { /* fall through to defaults */ }
-  return Object.fromEntries(Object.entries(SETTINGS_SCHEMA).map(([k, v]) => [k, v.default]));
+  const raw = loadSettingsFileRaw();
+  return Object.fromEntries(Object.entries(SETTINGS_SCHEMA).map(([k, v]) => [k, raw[k] ?? v.default]));
 }
 
 function validateSettings(incoming) {
