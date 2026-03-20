@@ -8,8 +8,9 @@ Prereqs:
 
 Steps:
 1. Prepare runner files (already downloaded by tools/setup-self-hosted-runner.sh):
-   sudo /home/chris/Documents/usbip/tools/setup-self-hosted-runner.sh --url https://github.com/yourorg/yourrepo --name usbip-runner
-   This will place the runner bits in /opt/actions-runner and write a helper at /usbip/session-files/runner-register.sh
+   cd /home/chris/Documents/usbip
+   sudo ./tools/setup-self-hosted-runner.sh --url https://github.com/yourorg/yourrepo --name usbip-runner
+   This will place the runner bits in /opt/actions-runner and write a helper at /usbip/session-files/runner-register.sh that registers from the extracted runner directory.
 
 2. Register the runner (one-time, requires token):
    sudo bash -c 'cd /opt/actions-runner && ./config.sh --url https://github.com/yourorg/yourrepo --token <TOKEN> --name usbip-runner --labels self-hosted,proxmox --unattended'

@@ -4,6 +4,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 API_URL="${API_URL:-http://127.0.0.1:3001}"
+SERVICE_NAME="${USBIP_SERVICE_NAME:-usbip-web}"
+SERVICE_MANAGER="${USBIP_SERVICE_MANAGER:-systemctl}"
+MDNS_SERVICE_TYPE="${USBIP_MDNS_SERVICE_TYPE:-_usbipcentral._tcp}"
+MDNS_PID_FILE="${USBIP_MDNS_PID_FILE:-/tmp/usbip-mdns-announce.pid}"
+MDNS_LOG_FILE="${USBIP_MDNS_LOG_FILE:-/tmp/usbip-mdns-announce.log}"
 
 RED='\033[0;31m' # used in error messages below
 GREEN='\033[0;32m'
@@ -24,6 +29,15 @@ ${YELLOW}Commands:${NC}
   ${GREEN}devices${NC}         List USB/IP devices
   ${GREEN}bind${NC} <busid>    Bind a USB device for export
   ${GREEN}unbind${NC} <busid>  Unbind a USB device
+  ${GREEN}network${NC}         Show local network interfaces and URLs
+  ${GREEN}discover${NC}        Show discovered peers, providers, or mDNS announcements
+  ${GREEN}connect${NC} <host> <busid>  Attach a remote USB/IP device
+  ${GREEN}disconnect${NC} <port>      Detach an imported USB/IP device
+  ${GREEN}up${NC}              Start the local usbip-web service
+  ${GREEN}down${NC}            Stop the local usbip-web service
+  ${GREEN}restart${NC}         Restart the local usbip-web service
+  ${GREEN}service${NC} [action] Manage the service (status/start/stop/restart/enable/disable/install/remove)
+  ${GREEN}virtual${NC} [action] Manage virtual media bridges (status/start/stop/restart)
   ${GREEN}health${NC}          Run health check script
   ${GREEN}prune${NC} [--exec]  Prune old backups (dry-run by default)
   ${GREEN}backup${NC}          Run backup for 500-999 range
@@ -32,9 +46,11 @@ ${YELLOW}Commands:${NC}
   ${GREEN}build${NC}           Build frontend
   ${GREEN}serve${NC}           Start backend server
   ${GREEN}logs${NC}            Tail backend logs
-  ${GREEN}install${NC}         Install systemd service (dry-run)
+  ${GREEN}install${NC}         Install systemd service (dry-run, alias for service install)
   ${GREEN}cron${NC}            Install cron jobs (dry-run)
   ${GREEN}help${NC}            Show this help
+
+Set ${CYAN}API_URL${NC} to any node's `/api` base URL to control that node directly from the terminal.
 EOF
   exit 0
 }
@@ -48,6 +64,59 @@ api_post() {
 }
 
 die() { echo -e "${RED}ERROR: $*${NC}" >&2; exit 1; }
+
+run_service_manager() {
+  if ! command -v "$SERVICE_MANAGER" >/dev/null 2>&1; then
+    die "service manager '$SERVICE_MANAGER' not available; use 'serve' for foreground runs or set USBIP_SERVICE_MANAGER to a compatible wrapper"
+  fi
+  "$SERVICE_MANAGER" "$@"
+}
+
+cmd_service_status() {
+  echo -e "${CYAN}=== Service Status ===${NC}"
+  if [ "$SERVICE_MANAGER" = "systemctl" ] && command -v systemctl >/dev/null 2>&1; then
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+      systemctl status "$SERVICE_NAME" --no-pager
+    else
+      echo "${SERVICE_NAME} service is not running."
+      echo "Start it with: usbip-ctl up"
+      echo "Install it with: DRY_RUN=0 usbip-ctl install"
+    fi
+    return
+  fi
+  run_service_manager status "$SERVICE_NAME"
+}
+
+cmd_service_action() {
+  local action="${1:-status}"
+  case "$action" in
+    status)
+      cmd_service_status
+      ;;
+    start|stop|restart|enable|disable)
+      run_service_manager "$action" "$SERVICE_NAME"
+      case "$action" in
+        start)   echo -e "${GREEN}${SERVICE_NAME} service started.${NC}" ;;
+        stop)    echo -e "${GREEN}${SERVICE_NAME} service stopped.${NC}" ;;
+        restart) echo -e "${GREEN}${SERVICE_NAME} service restarted.${NC}" ;;
+        enable)  echo -e "${GREEN}${SERVICE_NAME} service enabled.${NC}" ;;
+        disable) echo -e "${GREEN}${SERVICE_NAME} service disabled.${NC}" ;;
+      esac
+      ;;
+    install)
+      bash "$REPO_ROOT/tools/install-service.sh" --install
+      ;;
+    remove|uninstall|delete)
+      bash "$REPO_ROOT/tools/install-service.sh" --remove
+      ;;
+    help|-h|--help)
+      echo "Usage: usbip-ctl service <status|start|stop|restart|enable|disable|install|remove>"
+      ;;
+    *)
+      die "Usage: usbip-ctl service <status|start|stop|restart|enable|disable|install|remove>"
+      ;;
+  esac
+}
 
 cmd_status() {
   echo -e "${CYAN}=== Platform Status ===${NC}"
@@ -63,11 +132,11 @@ cmd_status() {
 import sys,json
 try:
   d=json.load(sys.stdin)
-  print(f"Hostname: {d[\"hostname\"]}")
-  print(f"CPUs: {d[\"cpus\"]}  Load: {d[\"loadavg\"][0]:.2f}, {d[\"loadavg\"][1]:.2f}, {d[\"loadavg\"][2]:.2f}")
+  print("Hostname: {}".format(d["hostname"]))
+  print("CPUs: {}  Load: {:.2f}, {:.2f}, {:.2f}".format(d["cpus"], d["loadavg"][0], d["loadavg"][1], d["loadavg"][2]))
   t=d["mem"]["total"]/(1024**3); f=d["mem"]["free"]/(1024**3)
-  print(f"Memory: {f:.1f}G free / {t:.1f}G total")
-  print(f"Uptime: {d[\"uptime\"]/3600:.1f}h")
+  print("Memory: {:.1f}G free / {:.1f}G total".format(f, t))
+  print("Uptime: {:.1f}h".format(d["uptime"]/3600))
 except: print("(could not parse system info)")
 ' 2>/dev/null
 }
@@ -79,13 +148,13 @@ import sys,json
 d=json.load(sys.stdin)
 cs=d.get("containers",[])
 if not cs: print("No containers found"); sys.exit(0)
-print(f"{"VMID":<8} {"STATUS":<12} {"NAME"}")
+print("{:<8} {:<12} {}".format("VMID", "STATUS", "NAME"))
 print("-"*40)
 for c in cs:
   s=c["status"]
   color="\033[32m" if s=="running" else "\033[31m"
-  print(f"{c[\"vmid\"]:<8} {color}{s:<12}\033[0m {c.get(\"name\",\"\")}")
-print(f"\nTotal: {len(cs)} containers")
+  print("{:<8} {}{:<12}\033[0m {}".format(c["vmid"], color, s, c.get("name","")))
+print("\nTotal: {} containers".format(len(cs)))
 ' 2>/dev/null
 }
 
@@ -97,7 +166,7 @@ from datetime import datetime
 d=json.load(sys.stdin)
 bs=d.get("backups",[])
 if not bs: print("No backups found"); sys.exit(0)
-print(f"{"VMID":<8} {"SIZE":<12} {"AGE":<12} {"FILE"}")
+print("{:<8} {:<12} {:<12} {}".format("VMID", "SIZE", "AGE", "FILE"))
 print("-"*70)
 for b in bs:
   sz=b["size"]
@@ -109,8 +178,8 @@ for b in bs:
   if age<3600: ages=f"{age//60}m ago"
   elif age<86400: ages=f"{age//3600}h ago"
   else: ages=f"{age//86400}d ago"
-  print(f"{b[\"vmid\"]:<8} {szs:<12} {ages:<12} {b[\"file\"]}")
-print(f"\nTotal: {len(bs)} archives")
+  print("{:<8} {:<12} {:<12} {}".format(b["vmid"], szs, ages, b["file"]))
+print("\nTotal: {} archives".format(len(bs)))
 ' 2>/dev/null
 }
 
@@ -121,11 +190,118 @@ import sys,json
 d=json.load(sys.stdin)
 devs=d.get("devices",[])
 if not devs: print("No USB devices found"); sys.exit(0)
-print(f"{"BUS ID":<16} {"DESCRIPTION"}")
+print("{:<16} {}".format("BUS ID", "DESCRIPTION"))
 print("-"*50)
 for dev in devs:
-  print(f"{dev[\"busid\"]:<16} {dev[\"description\"]}")
+  print("{:<16} {}".format(dev["busid"], dev["description"]))
 ' 2>/dev/null
+}
+
+cmd_network() {
+  echo -e "${CYAN}=== Network Interfaces ===${NC}"
+  api_get /api/network/interfaces | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+print("Bind host: {}".format(d.get("bindHost","unknown")))
+print("Port: {}".format(d.get("port","unknown")))
+print("Hostname: {}".format(d.get("hostname","unknown")))
+ifs=d.get("interfaces",[])
+if not ifs:
+  print("No interfaces reported")
+  sys.exit(0)
+print("{:<18} {:<20} {:<8} {}".format("NAME", "ADDRESS", "FAMILY", "URL"))
+print("-"*80)
+for iface in ifs:
+  print("{:<18} {:<20} {:<8} {}".format(iface.get("name",""), iface.get("address",""), iface.get("family",""), iface.get("url","")))
+' 2>/dev/null
+}
+
+cmd_discover() {
+  echo -e "${CYAN}=== Discovery Report ===${NC}"
+  api_get /api/discovery/peers | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+providers=d.get("providers", [])
+peers=d.get("peers", [])
+print("Scanned at: {}".format(d.get("scannedAt", "unknown")))
+print("Peers discovered: {}".format(d.get("peerCount", len(peers))))
+if providers:
+  print("\nProviders:")
+  for provider in providers:
+    status = "available" if provider.get("available", True) else "unavailable"
+    reason = provider.get("reason")
+    extra = f" ({reason})" if reason else ""
+    print("  - {}: {}/{}{}".format(provider.get("label",""), provider.get("peerCount", 0), provider.get("candidateCount", 0), extra))
+if not peers:
+  print("\nNo discovered peers found")
+  sys.exit(0)
+print("\n{:<18} {:<30} {:<12} {}".format("HOST", "BASE URL", "SOURCE", "SUBNET"))
+print("-"*90)
+for peer in peers:
+  print("{:<18} {:<30} {:<12} {}".format(peer.get("hostname") or peer.get("baseUrl",""), peer.get("baseUrl",""), peer.get("source",""), peer.get("subnet","")))
+' 2>/dev/null
+}
+
+mdns_pid_alive() {
+  if [ ! -f "$MDNS_PID_FILE" ]; then
+    return 1
+  fi
+  local pid
+  pid="$(cat "$MDNS_PID_FILE" 2>/dev/null || true)"
+  if [ -z "$pid" ]; then
+    return 1
+  fi
+  kill -0 "$pid" 2>/dev/null
+}
+
+cmd_discover_announce() {
+  local action="${1:-status}"
+  case "$action" in
+    status)
+      if mdns_pid_alive; then
+        echo -e "${CYAN}=== mDNS Announcement ===${NC}"
+        echo "Running with PID $(cat "$MDNS_PID_FILE")"
+        echo "Log file: $MDNS_LOG_FILE"
+      else
+        echo -e "${CYAN}=== mDNS Announcement ===${NC}"
+        echo "Not running"
+      fi
+      ;;
+    start)
+      if ! command -v avahi-publish-service >/dev/null 2>&1; then
+        die "avahi-publish-service is not available on this host"
+      fi
+      if mdns_pid_alive; then
+        echo -e "${GREEN}mDNS announcement already running (PID $(cat "$MDNS_PID_FILE"))${NC}"
+        return
+      fi
+      local info hostname port service_name
+      info=$(api_get /api/network/interfaces)
+      hostname=$(echo "$info" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("hostname","usbip-node"))' 2>/dev/null || echo "usbip-node")
+      port=$(echo "$info" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("port",3001))' 2>/dev/null || echo "3001")
+      service_name="${hostname} usbip-web"
+      nohup avahi-publish-service "$service_name" "$MDNS_SERVICE_TYPE" "$port" "path=/" >"$MDNS_LOG_FILE" 2>&1 &
+      echo $! > "$MDNS_PID_FILE"
+      echo -e "${GREEN}Started mDNS announcement for ${service_name} on ${MDNS_SERVICE_TYPE}:${port}${NC}"
+      ;;
+    stop)
+      if mdns_pid_alive; then
+        local pid
+        pid="$(cat "$MDNS_PID_FILE")"
+        kill "$pid"
+        rm -f "$MDNS_PID_FILE"
+        echo -e "${GREEN}Stopped mDNS announcement (PID $pid)${NC}"
+      else
+        echo "mDNS announcement is not running"
+      fi
+      ;;
+    help|-h|--help)
+      echo "Usage: usbip-ctl discover [status|announce <start|stop|status>]"
+      ;;
+    *)
+      die "Usage: usbip-ctl discover [status|announce <start|stop|status>]"
+      ;;
+  esac
 }
 
 cmd_bind() {
@@ -142,6 +318,81 @@ cmd_unbind() {
   echo ""
 }
 
+cmd_connect() {
+  local host="${1:?Usage: usbip-ctl connect <host> <busid>}"
+  local busid="${2:?Usage: usbip-ctl connect <host> <busid>}"
+  echo -e "${YELLOW}Connecting $busid from $host...${NC}"
+  api_post /api/usbip/connect "{\"host\":\"$host\",\"busid\":\"$busid\"}"
+  echo ""
+}
+
+cmd_disconnect() {
+  local port="${1:?Usage: usbip-ctl disconnect <port>}"
+  echo -e "${YELLOW}Disconnecting port $port...${NC}"
+  api_post /api/usbip/disconnect "{\"port\":\"$port\"}"
+  echo ""
+}
+
+cmd_virtual() {
+  local action="${1:-status}"
+  local bridge="${2:-}"
+  case "$action" in
+    status|list)
+      if [ -n "$bridge" ]; then
+        api_get "/api/virtual-bridges/$bridge" | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+b=d.get("bridge", {})
+if not b:
+  print("No matching virtual bridge found")
+  sys.exit(0)
+print("ID: {}".format(b.get("id","")))
+print("Label: {}".format(b.get("label","")))
+print("Kind: {}".format(b.get("kind","")))
+print("Ready: {}".format("yes" if b.get("ready") else "no"))
+print("Docs: {}".format(b.get("docs","")))
+print("Env start: {}".format(b.get("env", {}).get("start", "")))
+print("Env stop: {}".format(b.get("env", {}).get("stop", "")))
+print("Env restart: {}".format(b.get("env", {}).get("restart", "")))
+print("Env status: {}".format(b.get("env", {}).get("status", "")))
+print("Tools:")
+for tool in b.get("tools", []):
+  state = "available" if tool.get("available") else "missing"
+  print("  - {} ({})".format(tool.get("name",""), state))
+' 2>/dev/null
+        return
+      fi
+      api_get /api/virtual-bridges | python3 -c '
+import sys,json
+d=json.load(sys.stdin)
+bridges=d.get("bridges", [])
+if not bridges:
+  print("No virtual bridges found")
+  sys.exit(0)
+print("{:<18} {:<30} {:<10} {:<8} {}".format("ID", "LABEL", "KIND", "READY", "TOOLS"))
+print("-"*90)
+for bridge in bridges:
+  tools=" ".join("{}{}".format(t.get("name",""), "" if t.get("available") else " (missing)") for t in bridge.get("tools", []))
+  ready="yes" if bridge.get("ready") else "no"
+  print("{:<18} {:<30} {:<10} {:<8} {}".format(bridge.get("id",""), bridge.get("label",""), bridge.get("kind",""), ready, tools))
+' 2>/dev/null
+      ;;
+    start|stop|restart)
+      if [ -z "$bridge" ]; then
+        die "Usage: usbip-ctl virtual ${action} <bridge-id>"
+      fi
+      api_post "/api/virtual-bridges/$bridge/$action" "{}"
+      echo ""
+      ;;
+    help|-h|--help)
+      echo "Usage: usbip-ctl virtual <status|list|start|stop|restart> [bridge-id]"
+      ;;
+    *)
+      die "Usage: usbip-ctl virtual <status|list|start|stop|restart> [bridge-id]"
+      ;;
+  esac
+}
+
 case "${1:-help}" in
   status)     cmd_status ;;
   containers) cmd_containers ;;
@@ -149,6 +400,22 @@ case "${1:-help}" in
   devices)    cmd_devices ;;
   bind)       cmd_bind "${2:-}" ;;
   unbind)     cmd_unbind "${2:-}" ;;
+  network)    cmd_network ;;
+  discover)
+    case "${2:-status}" in
+      announce) cmd_discover_announce "${3:-status}" ;;
+      status|list|"") cmd_discover ;;
+      help|-h|--help) cmd_discover_announce help ;;
+      *) cmd_discover ;;
+    esac
+    ;;
+  connect)    cmd_connect "${2:-}" "${3:-}" ;;
+  disconnect) cmd_disconnect "${2:-}" ;;
+  up)         cmd_service_action start ;;
+  down)       cmd_service_action stop ;;
+  restart)    cmd_service_action restart ;;
+  service)    cmd_service_action "${2:-status}" ;;
+  virtual)    cmd_virtual "${2:-status}" "${3:-}" ;;
   health)     bash "$REPO_ROOT/modules/monitor/health-check.sh" || die "Health check failed" ;;
   prune)
     if [ "${2:-}" = "--exec" ]; then
@@ -159,10 +426,10 @@ case "${1:-help}" in
   backup)     bash "$REPO_ROOT/tools/backup-500-range.sh" ;;
   test)       cd "$REPO_ROOT" && make test ;;
   lint)       cd "$REPO_ROOT" && make lint ;;
-  build)      cd "$REPO_ROOT" && make build ;;
+  build)      cd "$REPO_ROOT" && npm run build ;;
   serve)      cd "$REPO_ROOT/webapp/backend" && exec node index.js ;;
   logs)       tail -f /usbip/session-files/backend-run*.log 2>/dev/null || echo "No logs found" ;;
-  install)    bash "$REPO_ROOT/tools/install-service.sh" --install ;;
+  install)    cmd_service_action install ;;
   cron)       bash "$REPO_ROOT/tools/install-cron-backups.sh" --install ;;
   help|*)     usage ;;
 esac

@@ -1,5 +1,7 @@
+import { resolveApiUrl } from './peer'
+
 export async function fetchJson(url, options = {}) {
-  const res = await fetch(url, options)
+  const res = await fetch(resolveApiUrl(url), options)
   const contentType = res.headers.get('content-type') || ''
   const isJson = contentType.includes('application/json')
 

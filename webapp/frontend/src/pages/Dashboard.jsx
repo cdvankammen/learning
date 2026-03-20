@@ -62,6 +62,26 @@ export default function Dashboard() {
           <p>OS uptime: {Math.round(system.uptime / 3600)}h</p>
         </div>
       )}
+      <div className="card">
+        <h3>How to use this console</h3>
+        <ul>
+          <li><code>npm run serve</code> starts the backend; <code>npm run build</code> builds the frontend bundle.</li>
+          <li><code>npm run status</code> and <code>npm run discover</code> query the local node from the terminal.</li>
+          <li><code>API_URL=http://peer:3001 bin/usbip-ctl status</code> or <code>discover</code> points the CLI at another node.</li>
+          <li><code>bin/usbip-ctl up</code>, <code>down</code>, <code>restart</code>, and <code>service status</code> control the local service when it is installed under systemd.</li>
+          <li>The Computers page now shows a Discovered peers section backed by <code>/api/discovery/peers</code>; subnet-scan and mDNS/Bonjour discovery are both live, and the same UI can target another node with <code>?peer=http://node:3001</code>.</li>
+          <li>The Virtual Devices page inventories <code>/api/virtual-bridges</code> and can drive configured media bridges such as go2rtc, PipeWire, v4l2loopback, and ALSA loopback.</li>
+          <li>Use <strong>Computers</strong> to discover LAN peers, <strong>Devices</strong> to export/import USB devices, <strong>Containers</strong> for LXC actions, and <strong>Backups</strong> for retention and restore work.</li>
+        </ul>
+      </div>
+      <div className="card">
+        <h3>What this is and is not</h3>
+        <ul>
+          <li>This platform manages real USB/IP devices and can export and import at the same time.</li>
+          <li>Virtual audio/video endpoints should use a separate media layer such as PipeWire, go2rtc, v4l2loopback, or ALSA loopback instead of raw USB/IP.</li>
+          <li><code>0.0.0.0</code> is only a bind address; use a real LAN IP or hostname to reach other devices.</li>
+        </ul>
+      </div>
     </div>
   )
 }

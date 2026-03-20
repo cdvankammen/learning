@@ -22,6 +22,15 @@ test('GET /api/system returns host info', async ({ request }) => {
   expect(body.loadavg).toHaveLength(3);
 });
 
+test('GET /api/network/interfaces returns interface inventory', async ({ request }) => {
+  const resp = await request.get('/api/network/interfaces');
+  expect(resp.status()).toBe(200);
+  const body = await resp.json();
+  expect(body).toHaveProperty('bindHost');
+  expect(body).toHaveProperty('port');
+  expect(Array.isArray(body.interfaces)).toBe(true);
+});
+
 test('GET /api/lxc/list returns containers array', async ({ request }) => {
   const resp = await request.get('/api/lxc/list');
   expect(resp.status()).toBe(200);

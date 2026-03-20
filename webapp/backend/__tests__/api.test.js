@@ -74,6 +74,44 @@ describe('GET /api/usbip/capabilities', () => {
   })
 })
 
+describe('GET /api/network/interfaces', () => {
+  test('returns interface inventory', async () => {
+    const res = await request(app).get('/api/network/interfaces')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('bindHost')
+    expect(res.body).toHaveProperty('port')
+    expect(res.body).toHaveProperty('hostname')
+    expect(Array.isArray(res.body.interfaces)).toBe(true)
+  })
+})
+
+describe('GET /api/discovery/peers', () => {
+  test('returns a discovery report shape', async () => {
+    const previousLimit = process.env.USBIP_DISCOVERY_MAX_HOSTS_PER_INTERFACE
+    process.env.USBIP_DISCOVERY_MAX_HOSTS_PER_INTERFACE = '0'
+    try {
+      const res = await request(app).get('/api/discovery/peers')
+      expect(res.status).toBe(200)
+      expect(res.body).toHaveProperty('providerCount')
+      expect(Array.isArray(res.body.providers)).toBe(true)
+      expect(Array.isArray(res.body.peers)).toBe(true)
+    } finally {
+      if (previousLimit === undefined) delete process.env.USBIP_DISCOVERY_MAX_HOSTS_PER_INTERFACE
+      else process.env.USBIP_DISCOVERY_MAX_HOSTS_PER_INTERFACE = previousLimit
+    }
+  })
+})
+
+describe('GET /api/virtual-bridges', () => {
+  test('returns virtual bridge inventory', async () => {
+    const res = await request(app).get('/api/virtual-bridges')
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveProperty('platform')
+    expect(Array.isArray(res.body.bridges)).toBe(true)
+    expect(res.body.bridges.length).toBeGreaterThan(0)
+  })
+})
+
 describe('GET /api/usbip/ports', () => {
   test('returns ports array', async () => {
     const res = await request(app).get('/api/usbip/ports')

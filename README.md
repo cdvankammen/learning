@@ -7,7 +7,7 @@ A comprehensive platform for managing Proxmox LXC containers and USB/IP device s
 ```
  /home/chris/Documents/usbip/
 ├── webapp/
-│   ├── frontend/          # Vite + React SPA (Dashboard, Containers, Devices, Backups, Settings)
+│   ├── frontend/          # Vite + React SPA (Dashboard, Computers, Containers, Devices, Backups, Settings)
 │   └── backend/           # Express + Socket.IO API server
 ├── modules/
 │   ├── lxc-provision/     # LXC creation with safe defaults
@@ -43,10 +43,51 @@ cd webapp/frontend && npm install
 cd webapp/frontend && npm run build
 
 # Start server (serves API + frontend on port 3001)
-cd webapp/backend && node index.js
+cd webapp/backend && USBIP_BIND_HOST=0.0.0.0 node index.js
+
+# Or use the root convenience wrappers
+npm run build
+npm run serve
+npm run status
+npm run discover
 ```
 
 Open http://localhost:3001 to access the dashboard.
+
+The backend binds to all interfaces by default, so you can reach it through any LAN IP on the host. The new `Computers` page shows the reachable URLs that the machine advertises on the network.
+
+The terminal CLI lives at `bin/usbip-ctl`. Point `API_URL` at any node's `/api` base URL to control that node directly from the terminal:
+
+```bash
+API_URL=http://192.168.1.25:3001 bin/usbip-ctl status
+API_URL=http://192.168.1.25:3001 bin/usbip-ctl devices
+API_URL=http://192.168.1.25:3001 bin/usbip-ctl connect 192.168.1.30 1-2
+```
+
+For local service control, use the `up`, `down`, `restart`, and `service status` commands:
+
+```bash
+sudo bin/usbip-ctl up
+sudo bin/usbip-ctl service status
+sudo bin/usbip-ctl restart
+```
+
+Those commands wrap the local `usbip-web` system service on systemd hosts. `serve` still starts the backend in the foreground for development, while `up/down/restart` are the service-manager path. If you need a different manager name, set `USBIP_SERVICE_NAME` or `USBIP_SERVICE_MANAGER`.
+
+The same actions are available through npm from the repository root:
+
+```bash
+npm run up
+npm run down
+npm run restart
+npm run service -- status
+```
+
+The Computers page also calls `GET /api/discovery/peers` to show live nodes found by the subnet-scan fallback. Save any of those peers to keep them in the manual peer list across reloads.
+
+The separate virtual-device layer is exposed through `GET /api/virtual-bridges` and `POST /api/virtual-bridges/:id/:action`. Use `usbip-ctl virtual status`, `usbip-ctl virtual start <bridge>`, and `usbip-ctl virtual restart <bridge>` to inspect or drive the configured media bridges from the terminal.
+
+Add `?peer=http://node:3001` to any frontend route if you want the same UI to talk to a different node instead of opening a separate origin.
 
 ## API Endpoints
 
@@ -54,12 +95,21 @@ Open http://localhost:3001 to access the dashboard.
 |--------|------|-------------|
 | GET | `/api/health` | Service health + version |
 | GET | `/api/system` | Host info (hostname, CPU, memory, load) |
+| GET | `/api/network/interfaces` | Local interface inventory and bind host |
 | GET | `/api/lxc/list` | List all LXC containers |
 | GET | `/api/lxc/:id/status` | Single container status |
 | GET | `/api/backups` | List vzdump backup archives |
 | GET | `/api/usbip/devices` | List local USB devices |
+| GET | `/api/usbip/capabilities` | Report USB/IP server/client capability flags |
+| GET | `/api/usbip/ports` | List imported USB/IP ports |
+| GET | `/api/usbip/remote/:host/devices` | List devices exported by a peer host |
+| GET | `/api/virtual-bridges` | List virtual audio/video bridge profiles |
+| GET | `/api/virtual-bridges/:id` | Inspect one virtual bridge profile |
+| POST | `/api/virtual-bridges/:id/:action` | Run bridge start/stop/restart/status commands |
 | POST | `/api/usbip/bind` | Bind device for USB/IP export |
 | POST | `/api/usbip/unbind` | Unbind device |
+| POST | `/api/usbip/connect` | Attach a remote USB/IP device |
+| POST | `/api/usbip/disconnect` | Detach an imported USB/IP device |
 
 ## Makefile Targets
 
@@ -90,7 +140,8 @@ The platform wraps the USB/IP CLI tools and can act as both exporter and importe
 - **Server-side**: Bind/unbind local USB devices for network sharing
 - **Client-side**: Connect to/disconnect from remote USB devices
 - **Bidirectional**: One host can share local devices while simultaneously consuming devices from another host
-- **Web UI**: Manage unlimited remote peers from the Devices page in the dashboard
+- **Web UI**: Manage unlimited remote peers from the Devices page, and use the Computers page to discover and jump to them
+- **Computers page**: Discover LAN nodes, inspect their reachable URLs, and jump to each node's direct UI
 - **Shell helpers**: Source `modules/usbip/usbip-helpers.sh` for scripting
 
 The backend exposes the following USB/IP endpoints:
@@ -103,11 +154,19 @@ The backend exposes the following USB/IP endpoints:
 
 There is no application-level peer cap; limits are driven by the host and the USB/IP daemon.
 
+USB/IP carries raw USB transfers, not an application codec layer. Storage and HID devices are usually the most reliable starting point, while webcams, capture devices, and some USB audio peripherals can be sensitive to latency or isochronous-transfer limits.
+
+The npm scripts in this repository provide cross-platform build orchestration for the web app and release packaging, but the actual USB/IP runtime still depends on the host platform's USB/IP binary or driver stack (`usbip` on Linux, `usbipd`/usbipd-win on Windows, and experimental or third-party support on macOS).
+
+Virtual devices are a separate layer from USB/IP. If the end goal is to expose audio, video, or other non-USB sources, route them through a media bridge or a virtual-device driver on the host OS, then surface that endpoint in the UI as its own resource. The `usb-audio-ip-client` project is a good example of pairing USB/IP with PipeWire on Linux, `go2rtc` is a good example of a media-side bridge with codec negotiation and FFmpeg sources, and the read-only research points to `v4l2loopback` plus ALSA loopback as the Linux path for virtual camera/audio modules.
+
 Useful environment overrides:
 
 - `USBIP_FRONTEND_DIR` points the backend at a packaged frontend bundle when running from a release archive.
+- `USBIP_BIND_HOST` controls the interface bind address; it defaults to `0.0.0.0` so the service is reachable on all local interfaces.
 - `USBIP_BIN` selects the USB/IP command if the default (`usbip` on Unix, `usbipd` on Windows) is not the right one for the host.
 - `USBIP_API_RATE_LIMIT` and `USBIP_MUTATION_RATE_LIMIT` can be raised when you need to poll or manage many peers.
+- `USBIP_CORS_ALLOW_ALL=1` or `USBIP_ALLOWED_ORIGINS=http://mgmt.example:3001` can be used when a separate management GUI needs to talk directly to multiple nodes in the LAN.
 
 ## Testing
 

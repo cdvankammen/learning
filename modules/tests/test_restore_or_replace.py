@@ -1,15 +1,18 @@
-import os
 import subprocess
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SCRIPT = REPO_ROOT / 'modules' / 'lxc-restore' / 'restore-or-replace.sh'
+LOG = Path('/usbip/session-files/restore-or-replace.log')
 
 
 def test_restore_dry_run():
-    script = '/usbip/repo/modules/lxc-restore/restore-or-replace.sh'
-    assert os.path.exists(script)
+    assert SCRIPT.exists()
     # dry-run should succeed and not modify state
-    res = subprocess.run([script, '--dry-run'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    res = subprocess.run([str(SCRIPT), '--dry-run'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     assert res.returncode == 0
-    log = '/usbip/session-files/restore-or-replace.log'
-    assert os.path.exists(log)
-    with open(log, 'r') as f:
+    assert LOG.exists()
+    with LOG.open('r') as f:
         content = f.read()
     assert 'Started at' in content or 'DRY-RUN' in content

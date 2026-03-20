@@ -1,3 +1,6 @@
+Research index for the read-only USB/IP materials.
+See `docs/research.md` for the annotated summary and implementation notes.
+
 /home/chris/Documents/usbip/usbipResearchReadOnly/htlm usb ip.rtf
 /home/chris/Documents/usbip/usbipResearchReadOnly/claude - usbip_definitive_v3.html
 /home/chris/Documents/usbip/usbipResearchReadOnly/usbip research .docx

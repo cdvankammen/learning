@@ -2,11 +2,52 @@ const express = require('express');
 const path = require('path');
 const { execSync, exec, execFile, execFileSync } = require('child_process');
 const rateLimit = require('express-rate-limit');
+const os = require('os');
+const { discoverPeers } = require('./lib/discovery');
+const { listVirtualBridges, runVirtualBridgeAction } = require('./lib/virtual-bridges');
 const pkg = require('./package.json');
 const app = express();
 const fs = require('fs');
 
 app.use(express.json());
+
+const PORT = Number(process.env.PORT || 3001);
+const LISTEN_HOST = process.env.USBIP_BIND_HOST || process.env.HOST || '0.0.0.0';
+const ALLOW_ALL_CORS = process.env.USBIP_CORS_ALLOW_ALL === '1';
+const ALLOWED_CORS_ORIGINS = new Set(
+  (process.env.USBIP_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean)
+);
+
+function resolveCorsOrigin(origin) {
+  if (!origin) return null;
+  if (ALLOW_ALL_CORS || ALLOWED_CORS_ORIGINS.has('*')) return '*';
+  if (ALLOWED_CORS_ORIGINS.has(origin)) return origin;
+  return null;
+}
+
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/')) return next();
+
+  const origin = req.get('origin');
+  const allowOrigin = resolveCorsOrigin(origin);
+
+  if (allowOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Dry-Run');
+  }
+
+  if (req.method === 'OPTIONS') {
+    if (allowOrigin) return res.sendStatus(204);
+    return res.status(403).json({ error: 'CORS origin not allowed' });
+  }
+
+  next();
+});
 
 // Rate limiting — 100 requests per minute per IP
 const API_RATE_LIMIT = Number(process.env.USBIP_API_RATE_LIMIT || 1000);
@@ -129,6 +170,35 @@ function parseUsbipPorts(raw) {
 
 function respondDryRun(res, payload) {
   res.json(Object.assign({ ok: true, dryRun: true }, payload));
+}
+
+function formatNetworkUrl(address) {
+  const value = String(address);
+  return value.includes(':') ? `http://[${value}]:${PORT}` : `http://${value}:${PORT}`;
+}
+
+function getNetworkInterfaces() {
+  const entries = [];
+  for (const [name, addresses] of Object.entries(os.networkInterfaces())) {
+    for (const addr of addresses || []) {
+      entries.push({
+        name,
+        address: addr.address,
+        family: addr.family,
+        internal: addr.internal,
+        mac: addr.mac || null,
+        cidr: addr.cidr || null,
+        netmask: addr.netmask || null,
+        url: formatNetworkUrl(addr.address)
+      });
+    }
+  }
+  entries.sort((a, b) => {
+    if (a.internal !== b.internal) return a.internal ? 1 : -1;
+    if (a.name !== b.name) return a.name.localeCompare(b.name);
+    return a.address.localeCompare(b.address);
+  });
+  return entries;
 }
 
 app.get('/api/lxc/list', (_req, res) => {
@@ -256,6 +326,74 @@ app.post('/api/usbip/disconnect', (req, res) => {
   });
 });
 
+app.get('/api/network/interfaces', (_req, res) => {
+  res.json({
+    bindHost: LISTEN_HOST,
+    port: PORT,
+    hostname: os.hostname(),
+    interfaces: getNetworkInterfaces()
+  });
+});
+
+app.get('/api/discovery/peers', (req, res, next) => {
+  const interfaces = getNetworkInterfaces();
+  const timeoutMs = Number(req.query.timeout_ms || process.env.USBIP_DISCOVERY_TIMEOUT_MS || 500);
+  const maxHostsPerInterface = Number(req.query.max_hosts_per_interface || process.env.USBIP_DISCOVERY_MAX_HOSTS_PER_INTERFACE || 254);
+  const concurrency = Number(req.query.concurrency || process.env.USBIP_DISCOVERY_CONCURRENCY || 16);
+
+  discoverPeers({
+    interfaces,
+    port: PORT,
+    timeoutMs,
+    maxHostsPerInterface,
+    concurrency
+  })
+    .then(report => {
+      res.json({
+        bindHost: LISTEN_HOST,
+        port: PORT,
+        hostname: os.hostname(),
+        interfaces,
+        ...report
+      });
+    })
+    .catch(next);
+});
+
+app.get('/api/virtual-bridges', (_req, res) => {
+  res.json({
+    platform: process.platform,
+    bridges: listVirtualBridges()
+  });
+});
+
+app.get('/api/virtual-bridges/:id', (req, res) => {
+  const bridge = listVirtualBridges().find(item => item.id === req.params.id);
+  if (!bridge) {
+    return res.status(404).json({ error: `Unknown virtual bridge '${req.params.id}'` });
+  }
+  res.json({ bridge });
+});
+
+app.post('/api/virtual-bridges/:id/:action', mutationLimiter, (req, res) => {
+  const timeoutMs = Number(req.body?.timeoutMs || req.query.timeout_ms || process.env.USBIP_VIRTUAL_BRIDGE_TIMEOUT_MS || 300000);
+  const dryRun = isDryRun(req);
+
+  runVirtualBridgeAction(req.params.id, req.params.action, { timeoutMs, dryRun })
+    .then(result => {
+      res.json(result);
+    })
+    .catch(err => {
+      const statusCode = Number(err.statusCode) || 500;
+      res.status(statusCode).json({
+        error: err.message,
+        command: err.command || null,
+        stdout: err.stdout || '',
+        stderr: err.stderr || ''
+      });
+    });
+});
+
 // ── LXC actions ────────────────────────────────────────────
 function validateVmid(id) {
   return /^\d{1,5}$/.test(id);
@@ -345,7 +483,6 @@ app.post('/api/backups/trigger/:vmid', (req, res) => {
 
 // ── System info endpoint ───────────────────────────────────
 app.get('/api/system', (_req, res) => {
-  const os = require('os');
   res.json({
     hostname: os.hostname(),
     platform: os.platform(),
@@ -368,8 +505,7 @@ app.use((err, _req, res, _next) => {
 });
 
 // ── Graceful shutdown ──────────────────────────────────────
-const port = process.env.PORT || 3001;
-const server = app.listen(port, () => console.log(`usbip backend listening on ${port}`));
+const server = app.listen(PORT, LISTEN_HOST, () => console.log(`usbip backend listening on ${LISTEN_HOST}:${PORT}`));
 
 function shutdown(sig) {
   console.log(`${sig} received, shutting down gracefully...`);

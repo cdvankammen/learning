@@ -1,0 +1,19 @@
+{
+  "name": "usbip-platform",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix webapp/frontend run build",
+    "serve": "npm --prefix webapp/backend start",
+    "status": "bash bin/usbip-ctl status",
+    "discover": "bash bin/usbip-ctl discover",
+    "up": "bash bin/usbip-ctl up",
+    "down": "bash bin/usbip-ctl down",
+    "restart": "bash bin/usbip-ctl restart",
+    "service": "bash bin/usbip-ctl service",
+    "virtual": "bash bin/usbip-ctl virtual",
+    "cli": "bash bin/usbip-ctl",
+    "test:backend": "npm --prefix webapp/backend test",
+    "test:e2e": "npm --prefix e2e test",
+    "lint:frontend": "cd webapp/frontend && npx eslint src --ext .js,.jsx"
+  }
+}
