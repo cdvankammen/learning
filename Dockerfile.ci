@@ -1,11 +1,18 @@
-# Build frontend on host first: cd webapp/frontend && npm run build
-# Then run: docker build -t usbip-platform .
+# Multi-stage Dockerfile for CI environments (GitHub Actions, etc.)
+# where esbuild postinstall works normally
+FROM node:22-alpine AS frontend-build
+WORKDIR /app/frontend
+COPY webapp/frontend/package*.json ./
+RUN npm ci --no-audit
+COPY webapp/frontend/ ./
+RUN npm run build
+
 FROM node:22-alpine AS production
 WORKDIR /app
 COPY webapp/backend/package*.json ./
 RUN npm ci --no-audit --omit=dev
 COPY webapp/backend/ ./
-COPY webapp/frontend/dist ./public
+COPY --from=frontend-build /app/frontend/dist ./public
 ENV NODE_ENV=production
 ENV PORT=3001
 EXPOSE 3001
