@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { fetchJson } from '../lib/http'
+import { useToast } from '../components/ToastProvider'
 
 function formatSize(bytes) {
   if (bytes > 1e9) return (bytes / 1e9).toFixed(1) + ' GB'
@@ -15,7 +16,7 @@ function timeAgo(d) {
   return `${Math.round(sec / 86400)}d ago`
 }
 
-export default function Backups() {
+export default function Backups({ socket }) {
   const [backups, setBackups] = useState([])
   const [error, setError] = useState(null)
   const [triggerMsg, setTriggerMsg] = useState(null)
@@ -23,6 +24,7 @@ export default function Backups() {
   const [loading, setLoading] = useState(true)
   const [busyVmid, setBusyVmid] = useState(null)
   const refreshTimeoutRef = useRef(null)
+  const { notify } = useToast()
 
   async function fetchBackups() {
     try {
@@ -44,6 +46,17 @@ export default function Backups() {
       if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (!socket) return undefined
+
+    const handleBackupsChange = () => {
+      fetchBackups().catch(err => setError(err.message))
+    }
+
+    socket.on('backups-changed', handleBackupsChange)
+    return () => socket.off('backups-changed', handleBackupsChange)
+  }, [socket])
 
   async function triggerBackup(vmid) {
     if (!vmid) return
@@ -67,6 +80,14 @@ export default function Backups() {
     const timer = setTimeout(() => setTriggerMsg(null), 4000)
     return () => clearTimeout(timer)
   }, [triggerMsg])
+
+  useEffect(() => {
+    if (triggerMsg) notify(triggerMsg, 'info')
+  }, [triggerMsg, notify])
+
+  useEffect(() => {
+    if (error) notify(error, 'error')
+  }, [error, notify])
 
   // Get unique VMIDs from backup list for the trigger dropdown
   const vmids = [...new Set(backups.map(b => b.vmid))].sort()

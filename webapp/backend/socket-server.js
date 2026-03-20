@@ -1,64 +1,138 @@
-// Socket adapter for backend to manage real-time client control and LXC monitoring
-const { Server } = require('socket.io')
-const { execSync } = require('child_process')
+// WebSocket adapter for backend real-time updates.
+const { execSync } = require('child_process');
+const { WebSocketServer } = require('ws');
+
+function send(socket, event, data) {
+  if (socket.readyState !== 1) return;
+  socket.send(JSON.stringify({ event, data }));
+}
 
 module.exports = function setupSocket(httpServer) {
-  const io = new Server(httpServer, { cors: { origin: '*' } })
-  const clients = new Map()
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const clients = new Map();
 
-  // Periodic LXC status broadcast (every 10s)
-  let lxcInterval = null
-  function broadcastLxcStatus() {
-    try {
-      const raw = execSync('pct list 2>/dev/null', { timeout: 10000 }).toString().trim()
-      const lines = raw.split('\n').slice(1)
-      const containers = lines.map(l => {
-        const parts = l.trim().split(/\s+/)
-        return { vmid: parts[0], status: parts[1], name: parts[2] || '' }
-      }).filter(c => c.vmid)
-      io.emit('lxc-status', containers)
-    } catch {
-      // pct not available or errored; emit empty
-      io.emit('lxc-status', [])
+  let lxcInterval = null;
+  let stateInterval = null;
+
+  function broadcast(event, data) {
+    for (const client of wss.clients) {
+      send(client, event, data);
     }
   }
 
-  io.on('connection', socket => {
-    // Start broadcasting when first client connects
-    if (!lxcInterval && io.engine.clientsCount > 0) {
-      broadcastLxcStatus()
-      lxcInterval = setInterval(broadcastLxcStatus, 10000)
+  function broadcastClients() {
+    broadcast('clients', Array.from(clients.values()));
+  }
+
+  function broadcastLxcStatus() {
+    try {
+      const raw = execSync('pct list 2>/dev/null', { timeout: 10000 }).toString().trim();
+      const lines = raw.split('\n').slice(1);
+      const containers = lines
+        .map(line => {
+          const parts = line.trim().split(/\s+/);
+          return { vmid: parts[0], status: parts[1], name: parts[2] || '' };
+        })
+        .filter(container => container.vmid);
+      broadcast('lxc-status', containers);
+    } catch {
+      broadcast('lxc-status', []);
     }
+  }
 
-    socket.on('identify', data => {
-      const id = data.id || socket.id
-      clients.set(id, { id, name: data.name || id, status: 'connected', socketId: socket.id })
-      io.emit('clients', Array.from(clients.values()))
-    })
+  function broadcastRefreshTicks() {
+    broadcast('usbip-changed');
+    broadcast('backups-changed');
+    broadcast('discovery-peers');
+  }
 
-    socket.on('disconnect', () => {
-      for (const [id, info] of clients) {
-        if (info.socketId === socket.id) clients.delete(id)
+  function startIntervals() {
+    if (!lxcInterval) {
+      broadcastLxcStatus();
+      lxcInterval = setInterval(broadcastLxcStatus, 10000);
+    }
+    if (!stateInterval) {
+      broadcastRefreshTicks();
+      stateInterval = setInterval(broadcastRefreshTicks, 15000);
+    }
+  }
+
+  function stopIntervals() {
+    if (lxcInterval) {
+      clearInterval(lxcInterval);
+      lxcInterval = null;
+    }
+    if (stateInterval) {
+      clearInterval(stateInterval);
+      stateInterval = null;
+    }
+  }
+
+  wss.on('connection', socket => {
+    let clientId = null;
+
+    if (wss.clients.size > 0) startIntervals();
+    broadcastClients();
+
+    socket.on('message', raw => {
+      let message;
+      try {
+        message = JSON.parse(raw.toString());
+      } catch {
+        return;
       }
-      io.emit('clients', Array.from(clients.values()))
 
-      // Stop broadcasting when no clients
-      if (io.engine.clientsCount === 0 && lxcInterval) {
-        clearInterval(lxcInterval)
-        lxcInterval = null
+      const event = message && message.event;
+      const data = message && message.data ? message.data : {};
+
+      switch (event) {
+        case 'identify': {
+          const id = data.id || clientId;
+          clientId = id;
+          clients.set(id, {
+            id,
+            name: data.name || 'Web UI',
+            status: 'connected'
+          });
+          broadcastClients();
+          break;
+        }
+        case 'command':
+          send(socket, 'command_ack', { ok: true, cmd: data.cmd });
+          break;
+        case 'refresh-lxc':
+          broadcastLxcStatus();
+          break;
+        case 'refresh-usbip':
+          broadcast('usbip-changed');
+          break;
+        case 'refresh-backups':
+          broadcast('backups-changed');
+          break;
+        case 'refresh-discovery':
+          broadcast('discovery-peers');
+          break;
+        default:
+          break;
       }
-    })
+    });
 
-    socket.on('command', msg => {
-      io.to(socket.id).emit('command_ack', { ok: true, cmd: msg.cmd })
-    })
+    socket.on('close', () => {
+      if (clientId) clients.delete(clientId);
+      if (wss.clients.size === 0) stopIntervals();
+      broadcastClients();
+    });
+  });
 
-    // Allow clients to request immediate LXC refresh
-    socket.on('refresh-lxc', () => {
-      broadcastLxcStatus()
-    })
-  })
-
-  return io
-}
-
+  return {
+    emit: broadcast,
+    refreshLxc: broadcastLxcStatus,
+    refreshUsbip: () => broadcast('usbip-changed'),
+    refreshBackups: () => broadcast('backups-changed'),
+    refreshDiscovery: () => broadcast('discovery-peers'),
+    close: () => {
+      stopIntervals();
+      wss.close();
+    }
+  };
+};

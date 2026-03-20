@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchJson } from '../lib/http'
 import { normalizePeerBaseUrl, peerApiUrl } from '../lib/peer'
+import { useToast } from '../components/ToastProvider'
 
 function loadSavedPeers() {
   if (typeof window === 'undefined') return []
@@ -71,7 +72,8 @@ async function readDiscoverySnapshot(signal) {
   return fetchJson('/api/discovery/peers', requestOptions)
 }
 
-export default function Computers() {
+export default function Computers({ socket }) {
+  const [liveRefreshNonce, setLiveRefreshNonce] = useState(0)
   const [system, setSystem] = useState(null)
   const [network, setNetwork] = useState(null)
   const [capabilities, setCapabilities] = useState(null)
@@ -86,16 +88,36 @@ export default function Computers() {
   const [error, setError] = useState(null)
   const refreshTimer = useRef(null)
   const discoveryTimer = useRef(null)
+  const { notify } = useToast()
 
   useEffect(() => {
     saveSavedPeers(peers)
   }, [peers])
 
   useEffect(() => {
+    if (!socket) return undefined
+
+    const handleDiscoveryChange = () => {
+      setLiveRefreshNonce(nonce => nonce + 1)
+    }
+
+    socket.on('discovery-peers', handleDiscoveryChange)
+    return () => socket.off('discovery-peers', handleDiscoveryChange)
+  }, [socket])
+
+  useEffect(() => {
     if (!message) return undefined
     const timer = setTimeout(() => setMessage(null), 4000)
     return () => clearTimeout(timer)
   }, [message])
+
+  useEffect(() => {
+    if (message) notify(message, 'info')
+  }, [message, notify])
+
+  useEffect(() => {
+    if (error) notify(error, 'error')
+  }, [error, notify])
 
   const refreshDiscovery = useCallback(async (signal) => {
     const requestSignal = signal || undefined
@@ -186,7 +208,7 @@ export default function Computers() {
       controller.abort()
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
-  }, [peers])
+  }, [peers, liveRefreshNonce])
 
   useEffect(() => {
     const controller = new AbortController()

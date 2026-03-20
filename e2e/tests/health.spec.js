@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('../playwright');
 
 test('backend health', async ({ request }) => {
   const resp = await request.get('/api/health');

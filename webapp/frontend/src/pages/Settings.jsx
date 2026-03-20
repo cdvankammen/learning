@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { fetchJson } from '../lib/http'
+import { useToast } from '../components/ToastProvider'
 
 function FieldInput({ fieldKey, schema, value, onChange }) {
   const { type, description } = schema
@@ -37,6 +38,7 @@ export default function Settings({ socketStatus }) {
   const [saveMsg, setSaveMsg] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
+  const { notify } = useToast()
 
   const load = useCallback(async () => {
     try {
@@ -54,6 +56,23 @@ export default function Settings({ socketStatus }) {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (loadError) notify(loadError, 'error')
+  }, [loadError, notify])
+
+  useEffect(() => {
+    if (!saveMsg) return
+    if (saveMsg.startsWith('✓')) {
+      notify(saveMsg, 'success')
+      return
+    }
+    if (saveMsg.startsWith('⚠')) {
+      notify(saveMsg, 'warning')
+      return
+    }
+    notify(saveMsg, 'info')
+  }, [saveMsg, notify])
 
   function handleChange(key, val) {
     setDraft(prev => ({ ...prev, [key]: val }))
@@ -151,4 +170,3 @@ export default function Settings({ socketStatus }) {
     </div>
   )
 }
-

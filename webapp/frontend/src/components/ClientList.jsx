@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
+import { useToast } from './ToastProvider'
 
 export default function ClientList({ clients, socket, socketStatus }) {
   const [feedback, setFeedback] = useState(null)
+  const { notify } = useToast()
 
   useEffect(() => {
     if (!socket) return undefined
@@ -20,6 +22,10 @@ export default function ClientList({ clients, socket, socketStatus }) {
     const timer = setTimeout(() => setFeedback(null), 4000)
     return () => clearTimeout(timer)
   }, [feedback])
+
+  useEffect(() => {
+    if (feedback) notify(feedback, 'info')
+  }, [feedback, notify])
 
   function sendCommand(id, cmd){
     if (socketStatus !== 'connected' || !socket) {

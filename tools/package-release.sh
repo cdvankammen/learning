@@ -14,8 +14,9 @@ usage() {
   cat <<EOF
 Usage: $0 --platform PLATFORM --target PKG_TARGET [--outdir DIR] [--version VERSION] [--binary-name NAME]
 
-Example:
+Examples:
   $0 --platform linux-x64 --target linux-x64
+  $0 --platform linux-arm64 --target linux-arm64
 EOF
   exit 2
 }
@@ -72,6 +73,9 @@ cp -R "$FRONTEND_DIST" "$STAGING_DIR/frontend/dist"
 cp "$REPO_ROOT/README.md" "$STAGING_DIR/README.md"
 if [[ -d "$REPO_ROOT/docs" ]]; then
   cp -R "$REPO_ROOT/docs" "$STAGING_DIR/docs"
+fi
+if [[ -d "$REPO_ROOT/completions" ]]; then
+  cp -R "$REPO_ROOT/completions" "$STAGING_DIR/completions"
 fi
 
 (

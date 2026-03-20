@@ -56,6 +56,10 @@ Open http://localhost:3001 to access the dashboard.
 
 The backend binds to all interfaces by default, so you can reach it through any LAN IP on the host. The new `Computers` page shows the reachable URLs that the machine advertises on the network.
 
+Live UI updates are pushed over the backend WebSocket endpoint at `/ws`, so the Clients, Containers, Devices, Backups, and Computers views refresh without manual reloads when the backend state changes.
+
+The backend also serves `GET /api/openapi.json` as a machine-readable API description for the current HTTP routes.
+
 The terminal CLI lives at `bin/usbip-ctl`. Point `API_URL` at any node's `/api` base URL to control that node directly from the terminal:
 
 ```bash
@@ -66,6 +70,9 @@ API_URL=http://192.168.1.25:3001 bin/usbip-ctl connect 192.168.1.30 1-2
 
 You can also persist those defaults in `~/.usbip/config` as `KEY=VALUE` pairs. Supported keys include `API_URL`, `USBIP_SERVICE_NAME`, `USBIP_SERVICE_MANAGER`, `USBIP_MDNS_SERVICE_TYPE`, `USBIP_MDNS_PID_FILE`, and `USBIP_MDNS_LOG_FILE`. Set `USBIP_CLI_CONFIG_FILE` if you want the CLI to read a different file.
 Set `DRY_RUN=1` before a mutation command to preview bind, unbind, connect, disconnect, and virtual bridge actions.
+Pass `--json` or set `USBIP_OUTPUT_FORMAT=json` to print machine-readable output for the commands that already talk to the API.
+
+Shell completion scripts live under `completions/`. Source `completions/usbip-ctl.bash` for bash, or `completions/usbip-ctl.zsh` for zsh with `bashcompinit` enabled.
 
 For local service control, use the `up`, `down`, `restart`, and `service status` commands:
 
@@ -76,6 +83,8 @@ sudo bin/usbip-ctl restart
 ```
 
 Those commands wrap the local `usbip-web` system service on systemd hosts. `serve` still starts the backend in the foreground for development, while `up/down/restart` are the service-manager path. If you need a different manager name, set `USBIP_SERVICE_NAME` or `USBIP_SERVICE_MANAGER`.
+
+For a one-shot systemd install, run `bash tools/install-service.sh --install`. The helper renders `templates/usbip-web.service` against the current checkout root, so the resulting unit no longer depends on a hardcoded path.
 
 The same actions are available through npm from the repository root:
 
@@ -119,6 +128,7 @@ The web UI and `usbip-ctl virtual` namespace manage those bridges separately fro
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Service health + version |
+| GET | `/api/metrics` | Prometheus-style request, device, and health metrics |
 | GET | `/api/system` | Host info (hostname, CPU, memory, load) |
 | GET | `/api/network/interfaces` | Local interface inventory and bind host |
 | GET | `/api/settings` | Current settings snapshot with schema and config file path |
@@ -143,6 +153,14 @@ The web UI and `usbip-ctl virtual` namespace manage those bridges separately fro
 ### Settings
 
 The backend reads and writes settings from `$USBIP_CONFIG_DIR/settings.json` (default: `~/.config/usbip-web/settings.json`). The schema includes: `bindHost`, `port`, `corsAllowedOrigins`, `usbipBin`, `apiRateLimit`, `mutationRateLimit`, `mdnsServiceType`, and `logRequests`.
+
+Optional API authentication is configured through environment variables instead of the settings file:
+
+- `USBIP_AUTH_ADMIN_TOKEN` enables admin-only access for mutating endpoints.
+- `USBIP_AUTH_VIEWER_TOKEN` enables read-only access for dashboard and metrics requests.
+- `USBIP_AUTH_REQUIRED=1` forces auth even if only one token is set.
+
+Send the token as `Authorization: Bearer <token>` or `X-USBIP-Token: <token>`. When auth is enabled, GET `/api/health` remains public for probes, while `/api/metrics`, settings, USB/IP mutation routes, and the LXC/backup management routes require a valid token.
 
 The **Settings** page in the web UI connects to these three endpoints to provide a live, schema-driven configuration editor with validate-before-save support.
 
@@ -192,7 +210,7 @@ There is no application-level peer cap; limits are driven by the host and the US
 
 USB/IP carries raw USB transfers, not an application codec layer. Storage and HID devices are usually the most reliable starting point, while webcams, capture devices, and some USB audio peripherals can be sensitive to latency or isochronous-transfer limits.
 
-The npm scripts in this repository provide cross-platform build orchestration for the web app and release packaging, but the actual USB/IP runtime still depends on the host platform's USB/IP binary or driver stack (`usbip` on Linux, `usbipd`/usbipd-win on Windows, and experimental or third-party support on macOS).
+The npm scripts in this repository provide cross-platform build orchestration for the web app and release packaging, and the GitHub release workflow publishes Linux x64/arm64, macOS arm64, and Windows x64 archives. The actual USB/IP runtime still depends on the host platform's USB/IP binary or driver stack (`usbip` on Linux, `usbipd`/usbipd-win on Windows, and experimental or third-party support on macOS).
 
 Virtual devices are a separate layer from USB/IP. If the end goal is to expose audio, video, or other non-USB sources, route them through a media bridge or a virtual-device driver on the host OS, then surface that endpoint in the UI as its own resource. The `usb-audio-ip-client` project is a good example of pairing USB/IP with PipeWire on Linux, `go2rtc` is a good example of a media-side bridge with codec negotiation and FFmpeg sources, and the read-only research points to `v4l2loopback` plus ALSA loopback as the Linux path for virtual camera/audio modules.
 
@@ -203,6 +221,7 @@ Useful environment overrides:
 - `USBIP_BIN` selects the USB/IP command if the default (`usbip` on Unix, `usbipd` on Windows) is not the right one for the host.
 - `USBIP_API_RATE_LIMIT` and `USBIP_MUTATION_RATE_LIMIT` can be raised when you need to poll or manage many peers.
 - `USBIP_CORS_ALLOW_ALL=1` or `USBIP_ALLOWED_ORIGINS=http://mgmt.example:3001` can be used when a separate management GUI needs to talk directly to multiple nodes in the LAN.
+- `USBIP_AUTH_ADMIN_TOKEN`, `USBIP_AUTH_VIEWER_TOKEN`, and `USBIP_AUTH_REQUIRED` enable the optional token-based RBAC layer.
 
 ## Testing
 

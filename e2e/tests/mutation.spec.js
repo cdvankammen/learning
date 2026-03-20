@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('../playwright');
 
 test('POST /api/lxc/:id/stop dry-run', async ({ request }) => {
   const resp = await request.post('/api/lxc/123/stop', {

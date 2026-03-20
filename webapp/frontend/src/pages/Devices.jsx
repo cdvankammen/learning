@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { fetchJson } from '../lib/http'
+import { useToast } from '../components/ToastProvider'
 
 function loadSavedHosts() {
   if (typeof window === 'undefined') return []
@@ -21,26 +22,59 @@ function renderCapability(value) {
   return value === null ? 'unbounded' : String(value)
 }
 
-export default function Devices() {
+export default function Devices({ socket }) {
   const [devices, setDevices] = useState([])
   const [ports, setPorts] = useState([])
   const [capabilities, setCapabilities] = useState(null)
   const [remoteHosts, setRemoteHosts] = useState(loadSavedHosts())
   const [remoteData, setRemoteData] = useState({})
   const [hostInput, setHostInput] = useState('')
+  const [selectedDevices, setSelectedDevices] = useState([])
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { notify } = useToast()
 
   useEffect(() => {
     saveSavedHosts(remoteHosts)
   }, [remoteHosts])
 
   useEffect(() => {
+    if (!socket) return undefined
+
+    const handleUsbipChange = () => {
+      refreshLocalState().catch(err => setError(err.message))
+    }
+
+    socket.on('usbip-changed', handleUsbipChange)
+    return () => socket.off('usbip-changed', handleUsbipChange)
+  }, [socket])
+
+  useEffect(() => {
+    setSelectedDevices(prev => prev.filter(busid => devices.some(device => device.busid === busid)))
+  }, [devices])
+
+  useEffect(() => {
     if (!message) return undefined
     const timer = setTimeout(() => setMessage(null), 4000)
     return () => clearTimeout(timer)
   }, [message])
+
+  useEffect(() => {
+    if (message) notify(message, 'info')
+  }, [message, notify])
+
+  useEffect(() => {
+    if (error) notify(error, 'error')
+  }, [error, notify])
+
+  async function postUsbip(path, body) {
+    return fetchJson(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+  }
 
   async function refreshLocalState(signal) {
     const requestOptions = signal ? { signal } : undefined
@@ -175,11 +209,7 @@ export default function Devices() {
   async function handleBind(busid) {
     setMessage(`Binding ${busid}...`)
     try {
-      await fetchJson('/api/usbip/bind', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ busid })
-      })
+      await postUsbip('/api/usbip/bind', { busid })
       setMessage(`Bound ${busid}`)
       setError(null)
       await refreshLocalState()
@@ -191,11 +221,7 @@ export default function Devices() {
   async function handleUnbind(busid) {
     setMessage(`Unbinding ${busid}...`)
     try {
-      await fetchJson('/api/usbip/unbind', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ busid })
-      })
+      await postUsbip('/api/usbip/unbind', { busid })
       setMessage(`Unbound ${busid}`)
       setError(null)
       await refreshLocalState()
@@ -207,11 +233,7 @@ export default function Devices() {
   async function handleConnect(host, busid) {
     setMessage(`Connecting ${busid} from ${host}...`)
     try {
-      await fetchJson('/api/usbip/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host, busid })
-      })
+      await postUsbip('/api/usbip/connect', { host, busid })
       setMessage(`Connected ${busid} from ${host}`)
       setError(null)
       await refreshLocalState()
@@ -224,12 +246,44 @@ export default function Devices() {
   async function handleDisconnect(port) {
     setMessage(`Disconnecting port ${port}...`)
     try {
-      await fetchJson('/api/usbip/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ port })
-      })
+      await postUsbip('/api/usbip/disconnect', { port })
       setMessage(`Disconnected port ${port}`)
+      setError(null)
+      await refreshLocalState()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  function toggleDeviceSelection(busid) {
+    setSelectedDevices(prev => (
+      prev.includes(busid)
+        ? prev.filter(item => item !== busid)
+        : [...prev, busid]
+    ))
+  }
+
+  function selectAllDevices() {
+    setSelectedDevices(devices.map(device => device.busid))
+  }
+
+  function clearSelectedDevices() {
+    setSelectedDevices([])
+  }
+
+  async function runBulkAction(action) {
+    if (selectedDevices.length === 0) return
+    const label = action === 'bind' ? 'Binding' : 'Unbinding'
+    setMessage(`${label} ${selectedDevices.length} selected device(s)...`)
+    try {
+      const path = action === 'bind' ? '/api/usbip/bind' : '/api/usbip/unbind'
+      const results = await Promise.allSettled(selectedDevices.map(busid => postUsbip(path, { busid })))
+      const failures = results.filter(result => result.status === 'rejected')
+      if (failures.length > 0) {
+        throw new Error(failures[0].reason.message)
+      }
+      setSelectedDevices([])
+      setMessage(`${label} ${selectedDevices.length} selected device(s) complete`)
       setError(null)
       await refreshLocalState()
     } catch (err) {
@@ -267,16 +321,32 @@ export default function Devices() {
       <div className="card">
         <h3>Local Export</h3>
         <p>{devices.length} local device(s) detected</p>
+        {devices.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            <button onClick={selectAllDevices} disabled={devices.length === 0}>Select all</button>
+            <button onClick={clearSelectedDevices} disabled={selectedDevices.length === 0}>Clear selection</button>
+            <button onClick={() => runBulkAction('bind')} disabled={selectedDevices.length === 0}>Bind selected</button>
+            <button className="btn-danger" onClick={() => runBulkAction('unbind')} disabled={selectedDevices.length === 0}>Unbind selected</button>
+            {selectedDevices.length > 0 && <span className="hint">{selectedDevices.length} selected</span>}
+          </div>
+        )}
         {devices.length === 0 ? (
           <p>No local USB devices were returned by the backend.</p>
         ) : (
           <table>
             <thead>
-              <tr><th>Bus ID</th><th>Description</th><th>Actions</th></tr>
+              <tr><th></th><th>Bus ID</th><th>Description</th><th>Actions</th></tr>
             </thead>
             <tbody>
               {devices.map(device => (
                 <tr key={device.busid}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedDevices.includes(device.busid)}
+                      onChange={() => toggleDeviceSelection(device.busid)}
+                    />
+                  </td>
                   <td><code>{device.busid}</code></td>
                   <td>{device.description}</td>
                   <td>

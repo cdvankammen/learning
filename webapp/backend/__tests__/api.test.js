@@ -27,6 +27,18 @@ describe('GET /api/health', () => {
     expect(res.body).toHaveProperty('components')
     expect(res.body.components).toHaveProperty('usbip')
     expect(res.body.components).toHaveProperty('proxmox')
+    expect(res.headers['x-request-id']).toMatch(/^[0-9a-f-]{36}$/i)
+  })
+})
+
+describe('GET /api/metrics', () => {
+  test('returns Prometheus text metrics', async () => {
+    const res = await request(app).get('/api/metrics')
+    expect(res.status).toBe(200)
+    expect(res.headers['content-type']).toMatch(/text\/plain/)
+    expect(res.text).toMatch(/usbip_backend_info/)
+    expect(res.text).toMatch(/usbip_http_requests_total/)
+    expect(res.text).toMatch(/usbip_component_status/)
   })
 })
 

@@ -13,6 +13,17 @@ SERVICE_SRC="$REPO_ROOT/templates/usbip-web.service"
 SERVICE_DST="/etc/systemd/system/usbip-web.service"
 DRY_RUN="${DRY_RUN:-1}"
 
+render_service() {
+  python3 - "$SERVICE_SRC" "$REPO_ROOT" <<'PY'
+from pathlib import Path
+import sys
+
+template = Path(sys.argv[1]).read_text()
+repo_root = sys.argv[2]
+print(template.replace('__USBIP_REPO_ROOT__', repo_root), end='')
+PY
+}
+
 usage() {
   cat <<EOF
 Usage: $0 [--install | --remove | --status]
@@ -31,11 +42,14 @@ ACTION="${1:---status}"
 case "$ACTION" in
   --install)
     if [ "$DRY_RUN" -eq 1 ]; then
-      echo "DRY-RUN: would copy $SERVICE_SRC -> $SERVICE_DST"
+      echo "DRY-RUN: would render service for repo root $REPO_ROOT"
+      echo "DRY-RUN: WorkingDirectory=$REPO_ROOT/webapp/backend"
+      echo "DRY-RUN: ExecStart=/usr/bin/node $REPO_ROOT/webapp/backend/index.js"
+      echo "DRY-RUN: would copy rendered service to $SERVICE_DST"
       echo "DRY-RUN: would run systemctl daemon-reload && systemctl enable --now usbip-web"
       echo "Set DRY_RUN=0 to actually install."
     else
-      cp "$SERVICE_SRC" "$SERVICE_DST"
+      render_service > "$SERVICE_DST"
       systemctl daemon-reload
       systemctl enable --now usbip-web
       echo "Service installed and started."

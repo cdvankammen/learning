@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { fetchJson } from '../lib/http'
+import { useToast } from '../components/ToastProvider'
 
 export default function Containers({ socket, socketStatus, socketContainers, hasSocketSnapshot }) {
   const [containers, setContainers] = useState([])
@@ -8,6 +9,7 @@ export default function Containers({ socket, socketStatus, socketContainers, has
   const [loading, setLoading] = useState(true)
   const [busyAction, setBusyAction] = useState(null)
   const refreshTimeoutRef = useRef(null)
+  const { notify } = useToast()
 
   async function fetchContainers() {
     try {
@@ -35,6 +37,14 @@ export default function Containers({ socket, socketStatus, socketContainers, has
     const timer = setTimeout(() => setActionMsg(null), 4000)
     return () => clearTimeout(timer)
   }, [actionMsg])
+
+  useEffect(() => {
+    if (actionMsg) notify(actionMsg, 'info')
+  }, [actionMsg, notify])
+
+  useEffect(() => {
+    if (error) notify(error, 'error')
+  }, [error, notify])
 
   useEffect(() => {
     if (socketStatus === 'connected' && hasSocketSnapshot) {

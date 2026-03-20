@@ -6,6 +6,23 @@ const rateLimit = require('express-rate-limit');
 const os = require('os');
 const { discoverPeers } = require('./lib/discovery');
 const { listVirtualBridges, runVirtualBridgeAction } = require('./lib/virtual-bridges');
+const { createRequestLogger, logRequestError } = require('./lib/request-logger');
+const { createAuthMiddleware } = require('./lib/auth');
+const { recordHttpRequest, renderPrometheusMetrics } = require('./lib/metrics');
+const setupSocket = require('./socket-server');
+const { createMutationQueue } = require('./lib/mutation-queue');
+const { OPENAPI_SPEC } = require('./lib/openapi');
+const {
+  parseConfiguredInteger,
+  parsePositiveInteger,
+  isValidHost,
+  isValidBusid,
+  isValidPort,
+  normalizePort,
+  isValidVmid,
+  isValidBindHost
+} = require('./lib/validation');
+const { parseUsbipDevices, parseUsbipPorts } = require('./lib/usbip-parsers');
 const pkg = require('./package.json');
 
 const CONFIG_DIR = process.env.USBIP_CONFIG_DIR ||
@@ -24,11 +41,6 @@ function loadSettingsFileRaw() {
   return {};
 }
 
-function parseConfiguredInteger(value, fallback) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
 const BOOT_SETTINGS = loadSettingsFileRaw();
 const PORT = parseConfiguredInteger(process.env.PORT ?? BOOT_SETTINGS.port, 3001);
 const LISTEN_HOST = process.env.USBIP_BIND_HOST || process.env.HOST || BOOT_SETTINGS.bindHost || '0.0.0.0';
@@ -41,14 +53,16 @@ const ALLOWED_CORS_ORIGINS = new Set(
     .map(origin => origin.trim())
     .filter(Boolean)
 );
-const API_RATE_LIMIT = parseConfiguredInteger(process.env.USBIP_API_RATE_LIMIT ?? BOOT_SETTINGS.apiRateLimit, 1000);
-const MUTATION_RATE_LIMIT = parseConfiguredInteger(process.env.USBIP_MUTATION_RATE_LIMIT ?? BOOT_SETTINGS.mutationRateLimit, 60);
+const API_RATE_LIMIT = parsePositiveInteger(process.env.USBIP_API_RATE_LIMIT ?? BOOT_SETTINGS.apiRateLimit, 1000);
+const MUTATION_RATE_LIMIT = parsePositiveInteger(process.env.USBIP_MUTATION_RATE_LIMIT ?? BOOT_SETTINGS.mutationRateLimit, 60);
 const LOG_REQUESTS = process.env.USBIP_LOG_REQUESTS
   ? process.env.USBIP_LOG_REQUESTS !== '0'
   : BOOT_SETTINGS.logRequests !== false;
 const MDNS_SERVICE_TYPE = process.env.USBIP_MDNS_SERVICE_TYPE || BOOT_SETTINGS.mdnsServiceType || '_usbipcentral._tcp';
 
 const app = express();
+let realtime = null;
+const usbipMutationQueue = createMutationQueue();
 
 app.use(express.json());
 
@@ -80,6 +94,13 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(createRequestLogger({ enabled: LOG_REQUESTS, onFinish: recordHttpRequest }));
+app.use(createAuthMiddleware({
+  adminToken: process.env.USBIP_AUTH_ADMIN_TOKEN,
+  viewerToken: process.env.USBIP_AUTH_VIEWER_TOKEN,
+  requireAuth: process.env.USBIP_AUTH_REQUIRED === '1'
+}));
+
 const limiter = rateLimit({ windowMs: 60 * 1000, max: API_RATE_LIMIT, standardHeaders: true, legacyHeaders: false });
 app.use('/api/', limiter);
 
@@ -95,14 +116,6 @@ app.use('/api/usbip/bind', mutationLimiter);
 app.use('/api/usbip/unbind', mutationLimiter);
 app.use('/api/usbip/connect', mutationLimiter);
 app.use('/api/usbip/disconnect', mutationLimiter);
-
-// Request logging middleware
-app.use((req, _res, next) => {
-  if (!LOG_REQUESTS) return next();
-  const ts = new Date().toISOString();
-  console.log(`${ts} ${req.method} ${req.url}`);
-  next();
-});
 
 // Serve built frontend if available
 function resolveFrontendDist() {
@@ -125,7 +138,21 @@ if (frontendDist) {
 
 // ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
-  const components = {
+  const components = buildHealthComponents();
+  res.json({ status: 'ok', version: pkg.version, uptime: process.uptime(), components });
+});
+
+// ── LXC endpoints ──────────────────────────────────────────
+function safeExecFile(bin, args) {
+  try {
+    return execFileSync(bin, args, { timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return null;
+  }
+}
+
+function buildHealthComponents() {
+  return {
     usbip: {
       available: runUsbipSync(['list', '-l']) !== null,
       binary: USBIP_BIN
@@ -141,17 +168,6 @@ app.get('/api/health', (_req, res) => {
       available: fs.existsSync(CONFIG_DIR)
     }
   };
-
-  res.json({ status: 'ok', version: pkg.version, uptime: process.uptime(), components });
-});
-
-// ── LXC endpoints ──────────────────────────────────────────
-function safeExecFile(bin, args) {
-  try {
-    return execFileSync(bin, args, { timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-  } catch {
-    return null;
-  }
 }
 
 function runUsbipSync(args) {
@@ -168,49 +184,23 @@ function runUsbip(args, cb) {
   execFile(USBIP_BIN, args, { timeout: 10000 }, cb);
 }
 
+function runUsbipAsync(args) {
+  return new Promise((resolve, reject) => {
+    runUsbip(args, (err, stdout, stderr) => {
+      if (err) {
+        const error = new Error(stderr || err.message);
+        error.stdout = stdout;
+        error.stderr = stderr;
+        reject(error);
+        return;
+      }
+      resolve({ stdout, stderr });
+    });
+  });
+}
+
 function isDryRun(req) {
   return req.get('x-dry-run') === '1' || req.query.dry_run === '1';
-}
-
-function validateHost(host) {
-  return typeof host === 'string' && /^[A-Za-z0-9._:%\-\[\]]{1,255}$/.test(host);
-}
-
-function validateBusid(busid) {
-  return typeof busid === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(busid);
-}
-
-function validatePort(port) {
-  return typeof port === 'string' && /^\d{1,5}$/.test(port);
-}
-
-function parseUsbipDevices(raw) {
-  const devices = [];
-  const seen = new Set();
-  const lines = (raw || '').split(/\r?\n/);
-  for (const line of lines) {
-    let match = line.match(/^\s*-\s*busid\s+([A-Za-z0-9._:-]+)\s+\((.+)\)\s*$/i);
-    if (!match) {
-      match = line.match(/^\s*([A-Za-z0-9._:-]+):\s*(.+)\s+\((.+)\)\s*$/);
-    }
-    if (!match) continue;
-    const busid = match[1];
-    if (seen.has(busid)) continue;
-    seen.add(busid);
-    devices.push({ busid, description: (match[2] || '').trim() });
-  }
-  return devices;
-}
-
-function parseUsbipPorts(raw) {
-  const ports = [];
-  const lines = (raw || '').split(/\r?\n/);
-  for (const line of lines) {
-    const match = line.match(/^\s*Port\s+(\d+):\s*(.+)$/i);
-    if (!match) continue;
-    ports.push({ port: match[1], description: match[2].trim() });
-  }
-  return ports;
 }
 
 function respondDryRun(res, payload) {
@@ -286,7 +276,8 @@ app.get('/api/backups', (_req, res) => {
 app.get('/api/usbip/devices', (_req, res) => {
   const raw = runUsbipSync(['list', '-l']);
   if (!raw) return res.json({ devices: [], raw: '', error: 'usbip not available' });
-  res.json({ devices: parseUsbipDevices(raw), raw });
+  const parsed = parseUsbipDevices(raw);
+  res.json({ devices: parsed.devices, raw, warning: parsed.warning });
 });
 
 app.get('/api/usbip/capabilities', (_req, res) => {
@@ -306,41 +297,49 @@ app.get('/api/usbip/capabilities', (_req, res) => {
 app.get('/api/usbip/ports', (_req, res) => {
   const raw = runUsbipSync(['port']);
   if (!raw) return res.json({ ports: [], raw: '', error: 'usbip not available' });
-  res.json({ ports: parseUsbipPorts(raw), raw });
+  const parsed = parseUsbipPorts(raw);
+  res.json({ ports: parsed.ports, raw, warning: parsed.warning });
 });
 
 app.get('/api/usbip/remote/:host/devices', (req, res) => {
   const host = req.params.host;
-  if (!validateHost(host)) return res.status(400).json({ error: 'invalid host' });
+  if (!isValidHost(host)) return res.status(400).json({ error: 'invalid host' });
   const raw = runUsbipSync(['list', '-r', host]);
   if (!raw) return res.json({ host, devices: [], raw: '', error: 'usbip not available or host unreachable' });
-  res.json({ host, devices: parseUsbipDevices(raw), raw });
+  const parsed = parseUsbipDevices(raw);
+  res.json({ host, devices: parsed.devices, raw, warning: parsed.warning });
 });
 
-app.post('/api/usbip/bind', (req, res) => {
+app.post('/api/usbip/bind', async (req, res) => {
   const { busid } = req.body;
-  if (!validateBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
+  if (!isValidBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
   if (isDryRun(req)) return respondDryRun(res, { busid, action: 'bind', command: `usbip bind -b ${busid}` });
-  runUsbip(['bind', '-b', busid], (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
-    res.json({ ok: true, output: stdout });
-  });
+  try {
+    const result = await usbipMutationQueue.run(() => runUsbipAsync(['bind', '-b', busid]));
+    if (realtime) realtime.refreshUsbip();
+    res.json({ ok: true, output: result.stdout });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/usbip/unbind', (req, res) => {
+app.post('/api/usbip/unbind', async (req, res) => {
   const { busid } = req.body;
-  if (!validateBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
+  if (!isValidBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
   if (isDryRun(req)) return respondDryRun(res, { busid, action: 'unbind', command: `usbip unbind -b ${busid}` });
-  runUsbip(['unbind', '-b', busid], (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
-    res.json({ ok: true, output: stdout });
-  });
+  try {
+    const result = await usbipMutationQueue.run(() => runUsbipAsync(['unbind', '-b', busid]));
+    if (realtime) realtime.refreshUsbip();
+    res.json({ ok: true, output: result.stdout });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/usbip/connect', (req, res) => {
+app.post('/api/usbip/connect', async (req, res) => {
   const { host, busid } = req.body;
-  if (!validateHost(host)) return res.status(400).json({ error: 'invalid host' });
-  if (!validateBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
+  if (!isValidHost(host)) return res.status(400).json({ error: 'invalid host' });
+  if (!isValidBusid(busid)) return res.status(400).json({ error: 'invalid busid' });
   if (isDryRun(req)) {
     return respondDryRun(res, {
       host,
@@ -349,26 +348,33 @@ app.post('/api/usbip/connect', (req, res) => {
       command: `usbip attach -r ${host} -b ${busid}`
     });
   }
-  runUsbip(['attach', '-r', host, '-b', busid], (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
-    res.json({ ok: true, host, busid, output: stdout });
-  });
+  try {
+    const result = await usbipMutationQueue.run(() => runUsbipAsync(['attach', '-r', host, '-b', busid]));
+    if (realtime) realtime.refreshUsbip();
+    res.json({ ok: true, host, busid, output: result.stdout });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/usbip/disconnect', (req, res) => {
+app.post('/api/usbip/disconnect', async (req, res) => {
   const { port } = req.body;
-  if (!validatePort(port)) return res.status(400).json({ error: 'invalid port' });
+  if (!isValidPort(port)) return res.status(400).json({ error: 'invalid port' });
+  const normalizedPort = normalizePort(port);
   if (isDryRun(req)) {
     return respondDryRun(res, {
-      port,
+      port: normalizedPort,
       action: 'disconnect',
-      command: `usbip detach -p ${port}`
+      command: `usbip detach -p ${normalizedPort}`
     });
   }
-  runUsbip(['detach', '-p', port], (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: stderr || err.message });
-    res.json({ ok: true, port, output: stdout });
-  });
+  try {
+    const result = await usbipMutationQueue.run(() => runUsbipAsync(['detach', '-p', normalizedPort]));
+    if (realtime) realtime.refreshUsbip();
+    res.json({ ok: true, port: normalizedPort, output: result.stdout });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/network/interfaces', (_req, res) => {
@@ -441,10 +447,6 @@ app.post('/api/virtual-bridges/:id/:action', mutationLimiter, (req, res) => {
 });
 
 // ── LXC actions ────────────────────────────────────────────
-function validateVmid(id) {
-  return /^\d{1,5}$/.test(id);
-}
-
 const DUMP_DIR = '/var/lib/vz/dump';
 function isBackupRecent(vmid, hours = 4) {
   try {
@@ -480,7 +482,7 @@ function triggerBackup(vmid, cb) {
 
 app.post('/api/lxc/:id/start', (req, res) => {
   const id = req.params.id;
-  if (!validateVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
+  if (!isValidVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
   const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
   if (dryRun) return res.json({ ok: true, vmid: id, action: 'start', dryRun: true, message: 'Simulated start' });
   exec(`pct start ${id}`, { timeout: 30000 }, (err, stdout, stderr) => {
@@ -491,7 +493,7 @@ app.post('/api/lxc/:id/start', (req, res) => {
 
 app.post('/api/lxc/:id/stop', (req, res) => {
   const id = req.params.id;
-  if (!validateVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
+  if (!isValidVmid(id)) return res.status(400).json({ error: 'invalid vmid' });
   const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
   if (dryRun) {
     const recent = isBackupRecent(id, 4);
@@ -518,11 +520,12 @@ app.post('/api/lxc/:id/stop', (req, res) => {
 // ── Backup trigger ─────────────────────────────────────────
 app.post('/api/backups/trigger/:vmid', (req, res) => {
   const vmid = req.params.vmid;
-  if (!validateVmid(vmid)) return res.status(400).json({ error: 'invalid vmid' });
+  if (!isValidVmid(vmid)) return res.status(400).json({ error: 'invalid vmid' });
   const dryRun = (req.get('x-dry-run') === '1') || (req.query.dry_run === '1');
   if (dryRun) return res.json({ ok: true, vmid, dryRun: true, message: 'Would trigger backup (dry-run)' });
   triggerBackup(vmid, (err, result) => {
     if (err) return res.status(500).json({ error: 'backup failed', details: err.message || String(err) });
+    if (realtime) realtime.refreshBackups();
     res.json(Object.assign({ ok: true, vmid }, result));
   });
 });
@@ -537,6 +540,40 @@ app.get('/api/system', (_req, res) => {
     mem: { total: os.totalmem(), free: os.freemem() },
     cpus: os.cpus().length
   });
+});
+
+app.get('/api/metrics', (_req, res) => {
+  const components = buildHealthComponents();
+  const usbipDevices = runUsbipSync(['list', '-l']);
+  const usbipPorts = runUsbipSync(['port']);
+  const backupDir = '/var/lib/vz/dump';
+  const backupCount = (() => {
+    try {
+      return fs.existsSync(backupDir)
+        ? fs.readdirSync(backupDir).filter(f => f.startsWith('vzdump-lxc-') && /\.tar\./.test(f)).length
+        : 0;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const deviceCount = usbipDevices ? parseUsbipDevices(usbipDevices).devices.length : 0;
+  const portCount = usbipPorts ? parseUsbipPorts(usbipPorts).ports.length : 0;
+
+  res.type('text/plain; version=0.0.4');
+  res.send(renderPrometheusMetrics({
+    version: pkg.version,
+    bindHost: LISTEN_HOST,
+    port: PORT,
+    components,
+    deviceCount,
+    portCount,
+    backupCount
+  }));
+});
+
+app.get('/api/openapi.json', (_req, res) => {
+  res.json(OPENAPI_SPEC);
 });
 
 // ── Settings ───────────────────────────────────────────────
@@ -567,7 +604,7 @@ function validateSettings(incoming) {
     if (schema.type === 'boolean' && typeof value !== 'boolean' && value !== 'true' && value !== 'false') {
       errors[key] = `Must be true or false`;
     }
-    if (key === 'bindHost' && value && !/^[\d.]+$|^::$|^::1$|^0\.0\.0\.0$/.test(value)) {
+    if (key === 'bindHost' && value && !isValidBindHost(value)) {
       errors[key] = `Must be a valid IP address or 0.0.0.0`;
     }
     if (key === 'port') {
@@ -619,12 +656,13 @@ if (fs.existsSync(frontendDist)) {
 
 // ── Error handling middleware ───────────────────────────────
 app.use((err, _req, res, _next) => {
-  console.error(`[ERROR] ${err.stack || err.message}`);
+  logRequestError(err, _req, res);
   res.status(500).json({ error: 'Internal server error' });
 });
 
 // ── Graceful shutdown ──────────────────────────────────────
 const server = app.listen(PORT, LISTEN_HOST, () => console.log(`usbip backend listening on ${LISTEN_HOST}:${PORT}`));
+realtime = setupSocket(server);
 
 function shutdown(sig) {
   console.log(`${sig} received, shutting down gracefully...`);

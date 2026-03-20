@@ -1,0 +1,39 @@
+const { test, expect } = require('../playwright');
+
+async function assertShell(page) {
+  await expect(page.getByRole('heading', { name: 'USBIP Control' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Dashboard', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Computers', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Devices', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Settings', exact: true })).toBeVisible();
+}
+
+test.describe('desktop browser shell', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('renders the dashboard and device management entry points', async ({ page }) => {
+    await page.goto('/');
+    await assertShell(page);
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.getByText('How to use this console')).toBeVisible();
+
+    await page.goto('/devices');
+    await expect(page.getByRole('heading', { name: 'USB/IP Devices' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Local Export' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Imported Devices' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Remote Hosts' })).toBeVisible();
+  });
+});
+
+test.describe('mobile browser shell', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('keeps the settings workflow reachable on narrow screens', async ({ page }) => {
+    await page.goto('/settings');
+    await assertShell(page);
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Connection' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Backup Policy' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'About' })).toBeVisible();
+  });
+});
